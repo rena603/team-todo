@@ -885,12 +885,12 @@ document.getElementById('mSave').onclick=function(){
     ballOwner:document.getElementById('mBallOwner').value,stars:S.mS,hearts:S.mH,notes:document.getElementById('mNotes').value.trim()};
   if(S.editId){const t=ft(S.editId);if(t){Object.assign(t,d);if(S.matrixPos)delete S.matrixPos[t.id];}}
   else{d.id='n'+Date.now();d.group=S.ds==='work'?'Work':'App';ts().push(d);}
-  sv();closeModal();render();
+  sv();closeModal();const sy=window.scrollY;render();window.scrollTo(0,sy);
 };
 document.getElementById('mDelete').onclick=function(){
   if(!S.editId)return;const d=fds(S.editId);
   if(d==='work')S.work=S.work.filter(t=>t.id!==S.editId);else S.app=S.app.filter(t=>t.id!==S.editId);
-  sv();closeModal();render();
+  sv();closeModal();const sy=window.scrollY;render();window.scrollTo(0,sy);
 };
 document.getElementById('modal').onclick=function(e){if(e.target===this)closeModal();};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
@@ -939,7 +939,13 @@ document.getElementById('syncBtn').onclick=async function(){
   this.classList.add('loading');await fetchSheet();this.classList.remove('loading');
 };
 
-function render(){populateUserSelect();renderSum();renderFilters();renderBanner();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();}
+function render(){
+  const vw=document.getElementById(VI[S.view]);
+  const sx=vw?vw.scrollLeft:0;
+  populateUserSelect();renderSum();renderFilters();renderBanner();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();
+  const vw2=document.getElementById(VI[S.view]);
+  if(vw2)vw2.scrollLeft=sx;
+}
 ld();loadHash();render();updateHash();fetchSheet();
 </script>
 </body>
