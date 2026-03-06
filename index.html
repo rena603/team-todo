@@ -60,6 +60,13 @@
   .sync-btn.loading{animation:spin .8s linear infinite;}
   @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
   .sync-st{font-size:11px;color:#10b981;}
+  .ppl-sel{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px;}
+  .ppl-sel label{display:flex;align-items:center;gap:4px;font-size:12px;padding:3px 8px;border-radius:12px;border:1px solid var(--border);cursor:pointer;transition:all .15s;}
+  .ppl-sel label:has(input:checked){background:#4f6af5;color:#fff;border-color:#4f6af5;}
+  .ppl-sel input{display:none;}
+  .ppl-add{display:flex;gap:4px;margin-bottom:8px;}
+  .ppl-add input{flex:1;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;}
+  .ppl-add button{font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;}
   .user-label{font-size:15px;font-weight:800;letter-spacing:-.4px;background:linear-gradient(135deg,#4f6af5,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
   .hdr-sep{width:1px;height:20px;background:var(--border);}
   .hdr-r{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;}
@@ -326,8 +333,11 @@
       <div><label>作業開始日</label><input type="date" id="mDateStart"></div>
       <div><label>作業終了日</label><input type="date" id="mDateEnd"></div>
     </div>
-    <label>担当者（カンマ区切り）</label><input type="text" id="mAssignees" placeholder="rena, Ayano Yo">
-    <label>ボール所在</label><input type="text" id="mBallOwner" placeholder="先方, rena, みどりさん 等">
+    <label>担当者</label>
+    <div class="ppl-sel" id="mAssigneeWrap"></div>
+    <div class="ppl-add"><input type="text" id="mAssigneeNew" placeholder="新規追加"><button type="button" id="mAssigneeAddBtn">+</button></div>
+    <label>ボール所在</label>
+    <select id="mBallOwner"><option value="">未設定</option></select>
     <div class="rr">
       <div class="rg"><label>緊急度</label><div class="ri" id="mStars"><span class="rc rc-s" data-val="1">&#9733;</span><span class="rc rc-s" data-val="2">&#9733;</span><span class="rc rc-s" data-val="3">&#9733;</span></div></div>
       <div class="rg"><label>重要度</label><div class="ri" id="mHearts"><span class="rc rc-h" data-val="1">&#9829;</span><span class="rc rc-h" data-val="2">&#9829;</span><span class="rc rc-h" data-val="3">&#9829;</span></div></div>
@@ -412,6 +422,7 @@ function avH(assignees){
   return`<div class="s-av">${assignees.slice(0,3).map((a,i)=>`<div class="av ${AVC[i%AVC.length]}" title="${fname(a)}">${ini(a)}</div>`).join('')}</div>`;
 }
 function getProjects(){return[...new Set(allTasks().map(t=>t.project).filter(Boolean))];}
+function getAllPeople(){const p=new Set();allTasks().forEach(t=>{(t.assignees||[]).forEach(a=>p.add(a));if(t.ballOwner&&t.ballOwner.trim())p.add(t.ballOwner.trim());});return[...p].sort();}
 
 function sH(t,o={}){
   const td=isT(t.date),ov=isO(t.date),c=pc(t.project);
@@ -784,6 +795,23 @@ document.getElementById('projAddBtn').onclick=function(){
   document.getElementById('projNewName').value='';
 };
 
+function populatePeople(selectedAssignees,selectedBall){
+  const ppl=getAllPeople();
+  const wrap=document.getElementById('mAssigneeWrap');
+  wrap.innerHTML=ppl.map(p=>`<label><input type="checkbox" value="${p}"${selectedAssignees.includes(p)?' checked':''}>${fname(p)}</label>`).join('');
+  const sel=document.getElementById('mBallOwner');
+  sel.innerHTML=`<option value="">未設定</option><option value="先方">先方</option>`+ppl.map(p=>`<option value="${p}">${fname(p)}</option>`).join('');
+  sel.value=selectedBall;
+}
+document.getElementById('mAssigneeAddBtn').onclick=function(){
+  const v=document.getElementById('mAssigneeNew').value.trim();if(!v)return;
+  const wrap=document.getElementById('mAssigneeWrap');
+  wrap.insertAdjacentHTML('beforeend',`<label><input type="checkbox" value="${v}" checked>${fname(v)}</label>`);
+  const sel=document.getElementById('mBallOwner');
+  sel.insertAdjacentHTML('beforeend',`<option value="${v}">${fname(v)}</option>`);
+  document.getElementById('mAssigneeNew').value='';
+};
+
 let matrixDragMoved=false;
 function openModal(id,ds){
   if(matrixDragMoved){matrixDragMoved=false;return;}
@@ -796,18 +824,17 @@ function openModal(id,ds){
     populateProjectSelect(t.project);
     document.getElementById('mStatus').value=sk(t.status);document.getElementById('mDate').value=t.date||'';
     document.getElementById('mDateStart').value=t.dateStart||'';document.getElementById('mDateEnd').value=t.dateEnd||'';
-    document.getElementById('mAssignees').value=(t.assignees||[]).join(', ');
-    document.getElementById('mBallOwner').value=t.ballOwner||'';
+    populatePeople(t.assignees||[],t.ballOwner||'');
     document.getElementById('mNotes').value=t.notes||'';S.mS=t.stars||0;S.mH=t.hearts||0;
     document.getElementById('mDelete').style.display='block';
   } else {
     document.getElementById('modalTitle').textContent='新規タスク';
     document.getElementById('mName').value='';
     populateProjectSelect('');
-    document.getElementById('mBallOwner').value='';document.getElementById('mNotes').value='';
+    document.getElementById('mNotes').value='';
     document.getElementById('mStatus').value=ds||'todo';document.getElementById('mDate').value='';
     document.getElementById('mDateStart').value='';document.getElementById('mDateEnd').value='';
-    document.getElementById('mAssignees').value='rena';S.mS=0;S.mH=0;
+    populatePeople(['rena'],'');S.mS=0;S.mH=0;
     document.getElementById('mDelete').style.display='none';
   }
   setupR('mStars',()=>S.mS,v=>S.mS=v);setupR('mHearts',()=>S.mH,v=>S.mH=v);
@@ -822,8 +849,8 @@ document.getElementById('mSave').onclick=function(){
   const proj=projVal==='__new__'?document.getElementById('projNewName').value.trim():projVal;
   const d={name:nm,project:proj,status:document.getElementById('mStatus').value,
     date:document.getElementById('mDate').value,dateStart:document.getElementById('mDateStart').value,dateEnd:document.getElementById('mDateEnd').value,
-    assignees:document.getElementById('mAssignees').value.split(',').map(s=>s.trim()).filter(Boolean),
-    ballOwner:document.getElementById('mBallOwner').value.trim(),stars:S.mS,hearts:S.mH,notes:document.getElementById('mNotes').value.trim()};
+    assignees:[...document.querySelectorAll('#mAssigneeWrap input:checked')].map(i=>i.value),
+    ballOwner:document.getElementById('mBallOwner').value,stars:S.mS,hearts:S.mH,notes:document.getElementById('mNotes').value.trim()};
   if(S.editId){const t=ft(S.editId);if(t){Object.assign(t,d);if(S.matrixPos)delete S.matrixPos[t.id];}}
   else{d.id='n'+Date.now();d.group=S.ds==='work'?'Work':'App';ts().push(d);}
   sv();closeModal();render();
