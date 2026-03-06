@@ -132,6 +132,13 @@
   /* avatar colors */
   .avc0{background:#4f6af5;}.avc1{background:#10b981;}.avc2{background:#f59e0b;}.avc3{background:#ec4899;}.avc4{background:#8b5cf6;}.avc5{background:#f97316;}
 
+  /* ===== TODAY ===== */
+  .td-v{padding:18px 28px;max-width:700px;}
+  .td-sec{margin-bottom:24px;}
+  .td-sec-h{font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+  .td-sec-h .td-cnt{font-size:11px;color:var(--text-3);font-weight:500;background:var(--surface2);padding:2px 8px;border-radius:100px;}
+  .td-empty{padding:24px;text-align:center;color:var(--text-3);font-size:13px;}
+
   /* ===== KANBAN ===== */
   .kb{display:flex;gap:12px;padding:18px 28px;overflow-x:auto;min-height:calc(100vh - 200px);}
   .kb-c{min-width:270px;max-width:310px;flex:1;}
@@ -291,7 +298,8 @@
   <select id="userSelect" class="user-sel"></select><span class="user-label">TODO</span>
   <div class="hdr-sep"></div>
   <div class="nav" id="viewTabs">
-    <button class="nav-b on" data-view="kanban">ボード</button>
+    <button class="nav-b on" data-view="today">今日</button>
+    <button class="nav-b" data-view="kanban">ボード</button>
     <button class="nav-b" data-view="matrix">マトリクス</button>
     <button class="nav-b" data-view="ball">ボール所在</button>
     <button class="nav-b" data-view="list">リスト</button>
@@ -311,7 +319,8 @@
 <div class="filters" id="filters"></div>
 <div id="todayBanner" style="display:none"></div>
 
-<div class="vw on" id="v-kanban"></div>
+<div class="vw on" id="v-today"></div>
+<div class="vw" id="v-kanban"></div>
 <div class="vw" id="v-matrix"></div>
 <div class="vw" id="v-ball"></div>
 <div class="vw" id="v-list"></div>
@@ -364,7 +373,7 @@ const SL={todo:'未着手',progress:'進行中',waiting:'先方確認中',done:'
 const AVC=['avc0','avc1','avc2','avc3','avc4','avc5'];
 const ACOLORS=['#4f6af5','#10b981','#f59e0b','#ec4899','#8b5cf6','#f97316','#0ea5e9','#14b8a6'];
 
-let S={view:'kanban',ds:'work',filter:'all',user:'all',work:[],app:[],editId:null,mS:0,mH:0};
+let S={view:'today',ds:'work',filter:'all',user:'all',work:[],app:[],editId:null,mS:0,mH:0};
 
 function parseCSV(text){
   const rows=[],fields=[];let cur='',inQ=false;
@@ -478,6 +487,27 @@ function renderBanner(){
   td.forEach(x=>{h+=`<div class="tn"><span class="pb pb-${pc(x.project)}">${x.project}</span>${x.name}</div>`;});
   if(od.length)h+=`<div style="margin-top:3px;font-size:11px;color:var(--red);font-weight:600">+ ${od.length}件の期限超過タスク</div>`;
   h+=`</div></div>`;el.innerHTML=h;
+}
+
+// TODAY
+function renderToday(){
+  const all=ts().filter(x=>sk(x.status)!=='done');
+  const todayStr=TODAY.toDateString();
+  const inRange=t=>{
+    if(!t.dateStart&&!t.dateEnd)return false;
+    const s=t.dateStart?new Date(t.dateStart):new Date('2000-01-01');
+    const e=t.dateEnd?new Date(t.dateEnd):new Date('2099-12-31');
+    return TODAY>=s&&TODAY<=e;
+  };
+  const overdue=all.filter(x=>isO(x.date)).sort((a,b)=>(b.stars||0)-(a.stars||0)||(b.hearts||0)-(a.hearts||0));
+  const due=all.filter(x=>isT(x.date)).sort((a,b)=>(b.stars||0)-(a.stars||0)||(b.hearts||0)-(a.hearts||0));
+  const working=all.filter(x=>!isT(x.date)&&!isO(x.date)&&inRange(x)).sort((a,b)=>(b.stars||0)-(a.stars||0)||(b.hearts||0)-(a.hearts||0));
+  const sec=(title,icon,items)=>{
+    if(!items.length)return'';
+    return`<div class="td-sec"><div class="td-sec-h">${icon} ${title}<span class="td-cnt">${items.length}</span></div>${items.map(x=>sH(x)).join('')}</div>`;
+  };
+  const html=sec('期限超過','🔴',overdue)+sec('今日が期限','🟠',due)+sec('作業中（今日が作業期間）','🔵',working);
+  document.getElementById('v-today').innerHTML=`<div class="td-v">${html||'<div class="td-empty">今日のタスクはありません</div>'}</div>`;
 }
 
 // KANBAN
@@ -903,7 +933,7 @@ document.getElementById('mDelete').onclick=function(){
 document.getElementById('modal').onclick=function(e){if(e.target===this)closeModal();};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
-const VI={kanban:'v-kanban',matrix:'v-matrix',ball:'v-ball',list:'v-list',timeline:'v-timeline'};
+const VI={today:'v-today',kanban:'v-kanban',matrix:'v-matrix',ball:'v-ball',list:'v-list',timeline:'v-timeline'};
 document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(b=>{
   b.onclick=()=>{document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(x=>x.classList.remove('on'));
     b.classList.add('on');S.view=b.dataset.view;Object.entries(VI).forEach(([k,v])=>document.getElementById(v).classList.toggle('on',k===S.view));updateHash();render();};
@@ -953,7 +983,7 @@ function render(){
   // Save ball column scroll positions
   const ballScrolls=[];
   document.querySelectorAll('.bl-c').forEach(c=>ballScrolls.push(c.scrollTop));
-  populateUserSelect();renderSum();renderFilters();renderBanner();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();
+  populateUserSelect();renderSum();renderFilters();renderBanner();renderToday();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();
   const vw2=document.getElementById(VI[S.view]);
   if(vw2)vw2.scrollLeft=sx;
   // Restore ball column scroll positions
