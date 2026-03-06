@@ -188,8 +188,8 @@
 
   /* ===== BALL ===== */
   .bl-v{padding:18px 28px;display:flex;gap:12px;overflow-x:auto;min-height:calc(100vh - 200px);}
-  .bl-c{min-width:250px;max-width:300px;flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:16px;box-shadow:var(--sh-xs);display:flex;flex-direction:column;max-height:calc(100vh - 220px);overflow-y:auto;}
-  .bl-h{font-size:13px;font-weight:700;margin-bottom:0;padding-bottom:10px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--surface);z-index:10;padding-top:4px;cursor:grab;}
+  .bl-c{min-width:250px;max-width:300px;flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:0 16px 16px;box-shadow:var(--sh-xs);display:flex;flex-direction:column;max-height:calc(100vh - 220px);overflow-y:auto;}
+  .bl-h{font-size:13px;font-weight:700;margin:0;padding:16px 0 10px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--surface);z-index:10;cursor:grab;}
   .bl-av{width:28px;height:28px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
   .bl-h .cnt{font-size:10px;color:var(--text-3);font-weight:500;margin-left:auto;background:var(--surface2);padding:2px 8px;border-radius:100px;}
   .bl-h .urg{font-size:10px;color:var(--red);font-weight:700;}
@@ -850,8 +850,10 @@ document.getElementById('mAssigneeAddBtn').onclick=function(){
 };
 
 let matrixDragMoved=false;
+let savedScrollY=0;
 function openModal(id,ds){
   if(matrixDragMoved){matrixDragMoved=false;return;}
+  savedScrollY=window.scrollY;
   S.editId=id;
   if(id){
     const t=ft(id);if(!t)return;S.ds=fds(id);
@@ -891,12 +893,12 @@ document.getElementById('mSave').onclick=function(){
   if(S.editId){const t=ft(S.editId);if(t){Object.assign(t,d);if(S.matrixPos)delete S.matrixPos[t.id];}
     const upd={...d,assignees:(d.assignees||[]).join(','),stars:String(d.stars),hearts:String(d.hearts)};apiUpdate(S.editId,upd);}
   else{d.id='n'+Date.now();d.group=S.ds==='work'?'Work':'App';d.dataset=S.ds;ts().push(d);}
-  sv();closeModal();const sy=window.scrollY;render();window.scrollTo(0,sy);
+  sv();closeModal();render();window.scrollTo(0,savedScrollY);
 };
 document.getElementById('mDelete').onclick=function(){
   if(!S.editId)return;const d=fds(S.editId);
   if(d==='work')S.work=S.work.filter(t=>t.id!==S.editId);else S.app=S.app.filter(t=>t.id!==S.editId);
-  sv();closeModal();const sy=window.scrollY;render();window.scrollTo(0,sy);
+  sv();closeModal();render();window.scrollTo(0,savedScrollY);
 };
 document.getElementById('modal').onclick=function(e){if(e.target===this)closeModal();};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
@@ -948,9 +950,14 @@ document.getElementById('syncBtn').onclick=async function(){
 function render(){
   const vw=document.getElementById(VI[S.view]);
   const sx=vw?vw.scrollLeft:0;
+  // Save ball column scroll positions
+  const ballScrolls=[];
+  document.querySelectorAll('.bl-c').forEach(c=>ballScrolls.push(c.scrollTop));
   populateUserSelect();renderSum();renderFilters();renderBanner();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();
   const vw2=document.getElementById(VI[S.view]);
   if(vw2)vw2.scrollLeft=sx;
+  // Restore ball column scroll positions
+  document.querySelectorAll('.bl-c').forEach((c,i)=>{if(ballScrolls[i])c.scrollTop=ballScrolls[i];});
 }
 ld();loadHash();render();updateHash();fetchSheet();
 </script>
