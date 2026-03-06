@@ -370,8 +370,13 @@ const SHEET_CSV=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=
 const API_BASE='https://todo-bot-u0rs.onrender.com';
 const KEY='rena-todo-v13',TODAY=new Date('2026-03-06');
 const SL={todo:'未着手',progress:'進行中',waiting:'先方確認中',done:'完了'};
-const AVC=['avc0','avc1','avc2','avc3','avc4','avc5'];
-const ACOLORS=['#4f6af5','#10b981','#f59e0b','#ec4899','#8b5cf6','#f97316','#0ea5e9','#14b8a6'];
+const USER_COLORS={
+  'rena':'#f59e0b','Ayano Yo':'#4f6af5','OshinoKanako':'#ec4899',
+  'Midori Fukihara':'#10b981','Tatsuya Eguchi':'#84cc16',
+  'IihoshiSatsuki':'#f97316','MorishimaChihiro':'#6B8E9B','先方':'#8b5cf6'
+};
+const FALLBACK_COLORS=['#8b5cf6','#14b8a6','#6366f1','#d946ef'];
+function userColor(name){return USER_COLORS[name]||FALLBACK_COLORS[Math.abs([...name].reduce((h,c)=>h*31+c.charCodeAt(0),0))%FALLBACK_COLORS.length];}
 
 let S={view:'today',ds:'work',filter:'all',user:'all',work:[],app:[],editId:null,mS:0,mH:0};
 
@@ -437,7 +442,7 @@ function fname(n){
 }
 function avH(assignees){
   if(!assignees||!assignees.length)return'';
-  return`<div class="s-av">${assignees.slice(0,3).map((a,i)=>`<div class="av ${AVC[i%AVC.length]}" title="${fname(a)}">${ini(a)}</div>`).join('')}</div>`;
+  return`<div class="s-av">${assignees.slice(0,3).map(a=>`<div class="av" style="background:${userColor(a)}" title="${fname(a)}">${ini(a)}</div>`).join('')}</div>`;
 }
 function getProjects(){return[...new Set(allTasks().map(t=>t.project).filter(Boolean))];}
 function getAllPeople(){const p=new Set();allTasks().forEach(t=>{(t.assignees||[]).forEach(a=>p.add(a));if(t.ballOwner&&t.ballOwner.trim())p.add(t.ballOwner.trim());});return[...p].sort();}
@@ -715,7 +720,7 @@ function renderBall(){
     const items=g[k].sort((a,b)=>new Date(a.date||'2099')-new Date(b.date||'2099'));
     const oc=items.filter(x=>isO(x.date)).length,tc=items.filter(x=>isT(x.date)).length;
     const ur=oc?`<span class="urg">${oc}件超過</span>`:tc?`<span class="urg" style="color:var(--orange)">${tc}件今日</span>`:'';
-    return`<div class="bl-c"><div class="bl-h"><div class="bl-av" style="background:${ACOLORS[i%ACOLORS.length]}">${ini(k)}</div><span>${fname(k)}ボール</span>${ur}<span class="cnt">${items.length}</span></div>
+    return`<div class="bl-c"><div class="bl-h"><div class="bl-av" style="background:${userColor(k)}">${ini(k)}</div><span>${fname(k)}ボール</span>${ur}<span class="cnt">${items.length}</span></div>
     <div class="bl-cards" ondragover="onDO(event)" ondrop="onBallDR(event,'${k==='未設定'?'':k}')">${items.length?items.map(x=>sH(x)).join(''):'<div style="padding:16px 8px;text-align:center;color:var(--text-3);font-size:11px">タスクなし</div>'}</div></div>`;
   }).join('')}</div>`;
   initBallColDrag();
