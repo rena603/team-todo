@@ -188,12 +188,14 @@
 
   /* ===== BALL ===== */
   .bl-v{padding:18px 28px;display:flex;gap:12px;overflow-x:auto;min-height:calc(100vh - 200px);}
-  .bl-c{min-width:250px;max-width:300px;flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:16px;box-shadow:var(--sh-xs);}
-  .bl-h{font-size:13px;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:8px;}
+  .bl-c{min-width:250px;max-width:300px;flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:16px;box-shadow:var(--sh-xs);display:flex;flex-direction:column;}
+  .bl-h{font-size:13px;font-weight:700;margin-bottom:0;padding-bottom:10px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:8px;position:sticky;top:52px;background:var(--surface);z-index:10;padding-top:4px;cursor:grab;}
   .bl-av{width:28px;height:28px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
   .bl-h .cnt{font-size:10px;color:var(--text-3);font-weight:500;margin-left:auto;background:var(--surface2);padding:2px 8px;border-radius:100px;}
   .bl-h .urg{font-size:10px;color:var(--red);font-weight:700;}
-  .bl-cards{display:flex;flex-direction:column;gap:6px;}
+  .bl-cards{display:flex;flex-direction:column;gap:6px;margin-top:12px;flex:1;}
+  .bl-c.drag-over{outline:2px dashed #4f6af5;outline-offset:-2px;}
+  .bl-c.dragging{opacity:.5;}
 
   /* ===== LIST ===== */
   .ls-w{padding:14px 28px;overflow-x:auto;}
@@ -493,6 +495,28 @@ window.onDO=function(e){e.preventDefault();e.currentTarget.classList.add('dov');
 window.onDR=function(e,st){e.preventDefault();e.currentTarget.classList.remove('dov');if(!dragId)return;const t=ft(dragId);if(t){t.status=st;sv();render();}dragId=null;};
 window.onBallDR=function(e,owner){e.preventDefault();e.currentTarget.classList.remove('dov');if(!dragId)return;const t=ft(dragId);if(t){t.ballOwner=owner;sv();render();}dragId=null;};
 
+// Ball column reorder
+let ballDragCol=null;
+function initBallColDrag(){
+  document.querySelectorAll('.bl-c').forEach(col=>{
+    const hdr=col.querySelector('.bl-h');
+    hdr.addEventListener('dragstart',e=>{ballDragCol=col;col.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    hdr.addEventListener('dragend',()=>{if(ballDragCol)ballDragCol.classList.remove('dragging');ballDragCol=null;document.querySelectorAll('.bl-c').forEach(c=>c.classList.remove('drag-over'));});
+    hdr.setAttribute('draggable','true');
+    col.addEventListener('dragover',e=>{e.preventDefault();if(ballDragCol&&ballDragCol!==col)col.classList.add('drag-over');});
+    col.addEventListener('dragleave',()=>col.classList.remove('drag-over'));
+    col.addEventListener('drop',e=>{
+      e.preventDefault();col.classList.remove('drag-over');
+      if(!ballDragCol||ballDragCol===col)return;
+      const parent=col.parentNode;
+      const cols=[...parent.children];
+      const fromIdx=cols.indexOf(ballDragCol),toIdx=cols.indexOf(col);
+      if(fromIdx<toIdx)col.after(ballDragCol);else col.before(ballDragCol);
+      ballDragCol=null;
+    });
+  });
+}
+
 // MATRIX — 3x3 grid (stars 1-3 x hearts 1-3, plus 0 handled)
 // MATRIX — Miro-style free canvas with 3x3 grid overlay
 if(!S.matrixPos)S.matrixPos={};
@@ -659,6 +683,7 @@ function renderBall(){
     return`<div class="bl-c"><div class="bl-h"><div class="bl-av" style="background:${ACOLORS[i%ACOLORS.length]}">${ini(k)}</div><span>${fname(k)}ボール</span>${ur}<span class="cnt">${items.length}</span></div>
     <div class="bl-cards" ondragover="onDO(event)" ondrop="onBallDR(event,'${k==='未設定'?'':k}')">${items.length?items.map(x=>sH(x)).join(''):'<div style="padding:16px 8px;text-align:center;color:var(--text-3);font-size:11px">タスクなし</div>'}</div></div>`;
   }).join('')}</div>`;
+  initBallColDrag();
 }
 
 // LIST
