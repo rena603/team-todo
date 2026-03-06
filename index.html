@@ -60,13 +60,15 @@
   .sync-btn.loading{animation:spin .8s linear infinite;}
   @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
   .sync-st{font-size:11px;color:#10b981;}
-  .ppl-sel{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px;}
-  .ppl-sel label{display:flex;align-items:center;gap:4px;font-size:12px;padding:3px 8px;border-radius:12px;border:1px solid var(--border);cursor:pointer;transition:all .15s;}
+  .ppl-sel{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 8px;}
+  .ppl-sel label{display:flex;align-items:center;gap:3px;font-size:11px;padding:4px 10px;border-radius:16px;border:1px solid #ddd;cursor:pointer;transition:all .15s;color:var(--sub);font-weight:500;}
+  .ppl-sel label:hover{border-color:#aaa;}
   .ppl-sel label:has(input:checked){background:#4f6af5;color:#fff;border-color:#4f6af5;}
   .ppl-sel input{display:none;}
-  .ppl-add{display:flex;gap:4px;margin-bottom:8px;}
-  .ppl-add input{flex:1;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;}
-  .ppl-add button{font-size:13px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;}
+  .ppl-add{display:flex;gap:4px;margin-bottom:10px;}
+  .ppl-add input{flex:1;font-size:11px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);}
+  .ppl-add button{font-size:12px;padding:4px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;color:var(--sub);font-weight:600;}
+  .ppl-add button:hover{background:#4f6af5;color:#fff;border-color:#4f6af5;}
   .user-label{font-size:15px;font-weight:800;letter-spacing:-.4px;background:linear-gradient(135deg,#4f6af5,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
   .hdr-sep{width:1px;height:20px;background:var(--border);}
   .hdr-r{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;}
@@ -795,12 +797,16 @@ document.getElementById('projAddBtn').onclick=function(){
   document.getElementById('projNewName').value='';
 };
 
+const TEAM=['rena','Ayano Yo','MorishimaChihiro','OshinoKanako','IihoshiSatsuki','Midori Fukihara','Tatsuya Eguchi'];
 function populatePeople(selectedAssignees,selectedBall){
-  const ppl=getAllPeople();
   const wrap=document.getElementById('mAssigneeWrap');
-  wrap.innerHTML=ppl.map(p=>`<label><input type="checkbox" value="${p}"${selectedAssignees.includes(p)?' checked':''}>${fname(p)}</label>`).join('');
+  const members=[...TEAM];
+  selectedAssignees.forEach(a=>{if(!members.includes(a))members.push(a);});
+  wrap.innerHTML=members.map(p=>`<label><input type="checkbox" value="${p}"${selectedAssignees.includes(p)?' checked':''}>${fname(p)}</label>`).join('');
+  const ballPpl=new Set([...members,'先方']);
+  allTasks().forEach(t=>{if(t.ballOwner&&t.ballOwner.trim())ballPpl.add(t.ballOwner.trim());});
   const sel=document.getElementById('mBallOwner');
-  sel.innerHTML=`<option value="">未設定</option><option value="先方">先方</option>`+ppl.map(p=>`<option value="${p}">${fname(p)}</option>`).join('');
+  sel.innerHTML=`<option value="">未設定</option>`+[...ballPpl].sort((a,b)=>{if(a==='先方')return-1;if(b==='先方')return 1;return a.localeCompare(b);}).map(p=>`<option value="${p}">${p==='先方'?'先方':fname(p)}</option>`).join('');
   sel.value=selectedBall;
 }
 document.getElementById('mAssigneeAddBtn').onclick=function(){
