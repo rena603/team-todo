@@ -898,11 +898,11 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 const VI={kanban:'v-kanban',matrix:'v-matrix',ball:'v-ball',list:'v-list',timeline:'v-timeline'};
 document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(b=>{
   b.onclick=()=>{document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');S.view=b.dataset.view;Object.entries(VI).forEach(([k,v])=>document.getElementById(v).classList.toggle('on',k===S.view));render();};
+    b.classList.add('on');S.view=b.dataset.view;Object.entries(VI).forEach(([k,v])=>document.getElementById(v).classList.toggle('on',k===S.view));updateHash();render();};
 });
 document.getElementById('datasetTabs').querySelectorAll('.ds-b').forEach(b=>{
   b.onclick=()=>{document.getElementById('datasetTabs').querySelectorAll('.ds-b').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');S.ds=b.dataset.dataset;S.filter='all';render();};
+    b.classList.add('on');S.ds=b.dataset.dataset;S.filter='all';updateHash();render();};
 });
 
 function populateUserSelect(){
@@ -912,15 +912,35 @@ function populateUserSelect(){
   sel.innerHTML=`<option value="all">全員</option>`+[...people].sort().map(p=>`<option value="${p}">${fname(p)}</option>`).join('');
   sel.value=S.user;
 }
-document.getElementById('userSelect').onchange=function(){S.user=this.value;S.filter='all';render();};
-document.querySelector('.user-label').textContent=document.title='TODO';
+document.getElementById('userSelect').onchange=function(){S.user=this.value;S.filter='all';updateHash();render();};
+document.querySelector('.user-label').textContent='TODO';
+function updateHash(){
+  const p=new URLSearchParams();
+  if(S.user!=='all')p.set('user',S.user);
+  if(S.view!=='kanban')p.set('view',S.view);
+  if(S.ds!=='work')p.set('ds',S.ds);
+  const h=p.toString();
+  history.replaceState(null,'',h?'?'+h:location.pathname);
+  document.title=S.user==='all'?'Team TODO':`${fname(S.user)} TODO`;
+}
+function loadHash(){
+  const p=new URLSearchParams(location.search);
+  if(p.get('user'))S.user=p.get('user');
+  if(p.get('view')){S.view=p.get('view');
+    document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(b=>{b.classList.toggle('on',b.dataset.view===S.view);});
+    Object.entries(VI).forEach(([k,v])=>document.getElementById(v).classList.toggle('on',k===S.view));
+  }
+  if(p.get('ds')){S.ds=p.get('ds');
+    document.getElementById('datasetTabs').querySelectorAll('.ds-b').forEach(b=>{b.classList.toggle('on',b.dataset.dataset===S.ds);});
+  }
+}
 
 document.getElementById('syncBtn').onclick=async function(){
   this.classList.add('loading');await fetchSheet();this.classList.remove('loading');
 };
 
 function render(){populateUserSelect();renderSum();renderFilters();renderBanner();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();}
-ld();render();fetchSheet();
+ld();loadHash();render();updateHash();fetchSheet();
 </script>
 </body>
 </html>
