@@ -491,6 +491,7 @@ window.onDS=function(e,id){dragId=id;e.target.closest('.s').style.opacity='.5';e
 window.onDE=function(e){e.target.closest('.s').style.opacity='1';};
 window.onDO=function(e){e.preventDefault();e.currentTarget.classList.add('dov');};
 window.onDR=function(e,st){e.preventDefault();e.currentTarget.classList.remove('dov');if(!dragId)return;const t=ft(dragId);if(t){t.status=st;sv();render();}dragId=null;};
+window.onBallDR=function(e,owner){e.preventDefault();e.currentTarget.classList.remove('dov');if(!dragId)return;const t=ft(dragId);if(t){t.ballOwner=owner;sv();render();}dragId=null;};
 
 // MATRIX — 3x3 grid (stars 1-3 x hearts 1-3, plus 0 handled)
 // MATRIX — Miro-style free canvas with 3x3 grid overlay
@@ -656,7 +657,7 @@ function renderBall(){
     const oc=items.filter(x=>isO(x.date)).length,tc=items.filter(x=>isT(x.date)).length;
     const ur=oc?`<span class="urg">${oc}件超過</span>`:tc?`<span class="urg" style="color:var(--orange)">${tc}件今日</span>`:'';
     return`<div class="bl-c"><div class="bl-h"><div class="bl-av" style="background:${ACOLORS[i%ACOLORS.length]}">${ini(k)}</div><span>${fname(k)}ボール</span>${ur}<span class="cnt">${items.length}</span></div>
-    <div class="bl-cards">${items.length?items.map(x=>sH(x,{noDrag:true})).join(''):'<div style="padding:16px 8px;text-align:center;color:var(--text-3);font-size:11px">タスクなし</div>'}</div></div>`;
+    <div class="bl-cards" ondragover="onDO(event)" ondrop="onBallDR(event,'${k==='未設定'?'':k}')">${items.length?items.map(x=>sH(x)).join(''):'<div style="padding:16px 8px;text-align:center;color:var(--text-3);font-size:11px">タスクなし</div>'}</div></div>`;
   }).join('')}</div>`;
 }
 
