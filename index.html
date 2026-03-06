@@ -358,6 +358,7 @@
 <script>
 const SHEET_ID='1Vc6qkfGUjTtGBCyCzSKe0kIpX2mr0Qvtf6_u7B4JYZE';
 const SHEET_CSV=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+const API_BASE='https://todo-bot-u0rs.onrender.com';
 const KEY='rena-todo-v13',TODAY=new Date('2026-03-06');
 const SL={todo:'未着手',progress:'進行中',waiting:'先方確認中',done:'完了'};
 const AVC=['avc0','avc1','avc2','avc3','avc4','avc5'];
@@ -388,6 +389,10 @@ function row2task(r,hdr){
     ballOwner:g('ballOwner'),notes:g('notes'),group:g('group'),dataset:g('dataset')};
 }
 
+async function apiUpdate(id,updates){
+  try{await fetch(API_BASE+'/api/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,updates})});}
+  catch(e){console.warn('API update failed',e);}
+}
 async function fetchSheet(){
   try{
     const r=await fetch(SHEET_CSV);const text=await r.text();
@@ -492,8 +497,8 @@ let dragId=null;
 window.onDS=function(e,id){dragId=id;e.target.closest('.s').style.opacity='.5';e.dataTransfer.effectAllowed='move';};
 window.onDE=function(e){e.target.closest('.s').style.opacity='1';};
 window.onDO=function(e){e.preventDefault();e.currentTarget.classList.add('dov');};
-window.onDR=function(e,st){e.preventDefault();e.currentTarget.classList.remove('dov');if(!dragId)return;const t=ft(dragId);if(t){t.status=st;sv();render();}dragId=null;};
-window.onBallDR=function(e,owner){e.preventDefault();e.currentTarget.classList.remove('dov');if(!dragId)return;const t=ft(dragId);if(t){t.ballOwner=owner;if(owner&&owner!=='先方'&&!(t.assignees||[]).includes(owner)){if(!t.assignees)t.assignees=[];t.assignees.push(owner);}sv();const sy=window.scrollY;render();window.scrollTo(0,sy);}dragId=null;};
+window.onDR=function(e,st){e.preventDefault();e.currentTarget.classList.remove('dov');if(!dragId)return;const t=ft(dragId);if(t){t.status=st;sv();render();apiUpdate(t.id,{status:st});}dragId=null;};
+window.onBallDR=function(e,owner){e.preventDefault();e.currentTarget.classList.remove('dov');if(!dragId)return;const t=ft(dragId);if(t){t.ballOwner=owner;const upd={ballOwner:owner};if(owner&&owner!=='先方'&&!(t.assignees||[]).includes(owner)){if(!t.assignees)t.assignees=[];t.assignees.push(owner);upd.assignees=t.assignees.join(',');}sv();const sy=window.scrollY;render();window.scrollTo(0,sy);apiUpdate(t.id,upd);}dragId=null;};
 
 // Ball column reorder
 let ballDragCol=null;
@@ -674,7 +679,7 @@ function renderBall(){
   ppl.add('未設定');
   // Group active tasks by ballOwner
   const g={};ppl.forEach(p=>g[p]=[]);
-  t.forEach(x=>{const o=(x.ballOwner||'').trim()||'未設定';if(!g[o])g[o]=[];g[o].push(x);});
+  t.forEach(x=>{const o=(x.ballOwner||'').trim()||(x.assignees&&x.assignees.length?x.assignees[0].trim():'')||'未設定';if(!g[o])g[o]=[];g[o].push(x);});
   const ks=Object.keys(g).sort((a,b)=>{if(a==='未設定')return 1;if(b==='未設定')return-1;if(a==='先方')return-1;if(b==='先方')return 1;return a.localeCompare(b);});
   document.getElementById('v-ball').innerHTML=`<div class="bl-v">${ks.map((k,i)=>{
     const items=g[k].sort((a,b)=>new Date(a.date||'2099')-new Date(b.date||'2099'));
@@ -883,8 +888,9 @@ document.getElementById('mSave').onclick=function(){
     date:document.getElementById('mDate').value,dateStart:document.getElementById('mDateStart').value,dateEnd:document.getElementById('mDateEnd').value,
     assignees:[...document.querySelectorAll('#mAssigneeWrap input:checked')].map(i=>i.value),
     ballOwner:document.getElementById('mBallOwner').value,stars:S.mS,hearts:S.mH,notes:document.getElementById('mNotes').value.trim()};
-  if(S.editId){const t=ft(S.editId);if(t){Object.assign(t,d);if(S.matrixPos)delete S.matrixPos[t.id];}}
-  else{d.id='n'+Date.now();d.group=S.ds==='work'?'Work':'App';ts().push(d);}
+  if(S.editId){const t=ft(S.editId);if(t){Object.assign(t,d);if(S.matrixPos)delete S.matrixPos[t.id];}
+    const upd={...d,assignees:(d.assignees||[]).join(','),stars:String(d.stars),hearts:String(d.hearts)};apiUpdate(S.editId,upd);}
+  else{d.id='n'+Date.now();d.group=S.ds==='work'?'Work':'App';d.dataset=S.ds;ts().push(d);}
   sv();closeModal();const sy=window.scrollY;render();window.scrollTo(0,sy);
 };
 document.getElementById('mDelete').onclick=function(){
