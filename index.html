@@ -493,7 +493,7 @@ window.onDS=function(e,id){dragId=id;e.target.closest('.s').style.opacity='.5';e
 window.onDE=function(e){e.target.closest('.s').style.opacity='1';};
 window.onDO=function(e){e.preventDefault();e.currentTarget.classList.add('dov');};
 window.onDR=function(e,st){e.preventDefault();e.currentTarget.classList.remove('dov');if(!dragId)return;const t=ft(dragId);if(t){t.status=st;sv();render();}dragId=null;};
-window.onBallDR=function(e,owner){e.preventDefault();e.currentTarget.classList.remove('dov');if(!dragId)return;const t=ft(dragId);if(t){t.ballOwner=owner;sv();render();}dragId=null;};
+window.onBallDR=function(e,owner){e.preventDefault();e.currentTarget.classList.remove('dov');if(!dragId)return;const t=ft(dragId);if(t){t.ballOwner=owner;if(owner&&owner!=='先方'&&!(t.assignees||[]).includes(owner)){if(!t.assignees)t.assignees=[];t.assignees.push(owner);}sv();const sy=window.scrollY;render();window.scrollTo(0,sy);}dragId=null;};
 
 // Ball column reorder
 let ballDragCol=null;
