@@ -226,7 +226,7 @@
   .tl-t{font-size:12px;}.tl-t .pb{margin-bottom:3px;display:block;width:fit-content;}
   .tl-tn{font-weight:500;margin-top:2px;}
   .tl-bw{position:relative;height:26px;}
-  .tl-b{position:absolute;height:26px;border-radius:6px;display:flex;align-items:center;padding:0 2px;font-size:10px;font-weight:600;white-space:nowrap;min-width:28px;cursor:grab;user-select:none;}
+  .tl-b{position:absolute;height:26px;border-radius:6px;display:flex;align-items:center;padding:0 4px;font-size:10px;font-weight:600;white-space:nowrap;min-width:70px;cursor:grab;user-select:none;}
   .tl-b:active{cursor:grabbing;}
   .tl-label{flex:1;text-align:center;pointer-events:none;padding:0 4px;overflow:hidden;text-overflow:ellipsis;}
   .tl-handle{width:6px;height:100%;cursor:col-resize;flex-shrink:0;border-radius:3px;transition:background .15s;}
@@ -814,7 +814,7 @@ function renderTimeline(){
   const ms=[],mss=[];
   for(let d=new Date(mn);d<=mx;d=new Date(d.getFullYear(),d.getMonth()+1,1)){ms.push((d.getMonth()+1)+'月');mss.push(fmtD(d));}
   const tp=pct(TODAY);
-  const minW=Math.max(ms.length*120,600);
+  const minW=Math.max(ms.length*200,800);
   let h=`<div style="min-width:${minW+200}px"><div class="tl-hd"><div></div><div class="tl-ms" style="position:relative">
     ${ms.map((m,i)=>`<div class="tl-m" style="left:${pct(mss[i])}%">${m}</div>`).join('')}
     <div class="tl-tl" style="left:${tp}%;height:${t.length*47+30}px;top:20px"></div>
