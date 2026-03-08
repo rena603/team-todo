@@ -368,7 +368,7 @@
 const SHEET_ID='1Vc6qkfGUjTtGBCyCzSKe0kIpX2mr0Qvtf6_u7B4JYZE';
 const SHEET_CSV=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 const API_BASE='https://todo-bot-u0rs.onrender.com';
-const KEY='rena-todo-v13',TODAY=new Date('2026-03-06');
+const KEY='rena-todo-v13',TODAY=new Date();TODAY.setHours(0,0,0,0);
 const SL={todo:'未着手',progress:'進行中',waiting:'先方確認中',done:'完了'};
 const USER_COLORS={
   'rena':'#facc15','Ayano Yo':'#4f6af5','OshinoKanako':'#ec4899',
@@ -498,7 +498,7 @@ function renderBanner(){
 
 // TODAY
 function renderToday(){
-  const all=ts().filter(x=>sk(x.status)!=='done');
+  const all=ts().filter(x=>sk(x.status)!=='done'&&(S.filter==='all'||x.project===S.filter));
   const todayStr=TODAY.toDateString();
   const inRange=t=>{
     if(!t.dateStart&&!t.dateEnd)return false;
@@ -750,11 +750,18 @@ function renderList(){
 // TIMELINE — work dates, draggable & resizable bars (Notion-style)
 function renderTimeline(){
   const t=ts().filter(x=>S.filter==='all'||x.project===S.filter).sort((a,b)=>{const pa=(a.project||'').localeCompare(b.project||'');return pa!==0?-pa:new Date(a.dateStart||a.date||'2099')-new Date(b.dateStart||b.date||'2099');});
-  const mn=new Date('2026-02-01'),mx=new Date('2026-06-30'),span=mx-mn;
+  // Auto-calculate timeline range: 1 month before earliest date to 2 months after latest date
+  const dates=t.flatMap(x=>[x.dateStart,x.dateEnd,x.date].filter(Boolean)).map(d=>new Date(d));
+  dates.push(TODAY);
+  const minD=new Date(Math.min(...dates)),maxD=new Date(Math.max(...dates));
+  const mn=new Date(minD.getFullYear(),minD.getMonth()-1,1);
+  const mx=new Date(maxD.getFullYear(),maxD.getMonth()+3,0);
+  const span=mx-mn;
   function pct(d){return((new Date(d)-mn)/span)*100;}
   function fromPct(p){return new Date(mn.getTime()+p/100*span);}
   function fmtD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-  const ms=['2月','3月','4月','5月','6月'],mss=['2026-02-01','2026-03-01','2026-04-01','2026-05-01','2026-06-01'];
+  const ms=[],mss=[];
+  for(let d=new Date(mn);d<=mx;d=new Date(d.getFullYear(),d.getMonth()+1,1)){ms.push((d.getMonth()+1)+'月');mss.push(fmtD(d));}
   const tp=pct(TODAY);
   let h=`<div class="tl-hd"><div></div><div class="tl-ms" style="position:relative">
     ${ms.map((m,i)=>`<div class="tl-m" style="left:${pct(mss[i])}%">${m}</div>`).join('')}
@@ -929,7 +936,7 @@ document.getElementById('mSave').onclick=function(){
     ballOwner:document.getElementById('mBallOwner').value,stars:S.mS,hearts:S.mH,notes:document.getElementById('mNotes').value.trim()};
   if(S.editId){const t=ft(S.editId);if(t){Object.assign(t,d);if(S.matrixPos)delete S.matrixPos[t.id];}
     const upd={...d,assignees:(d.assignees||[]).join(','),stars:String(d.stars),hearts:String(d.hearts)};apiUpdate(S.editId,upd);}
-  else{d.id='n'+Date.now();d.group=S.ds==='work'?'Work':'App';d.dataset=S.ds;ts().push(d);}
+  else{d.id='n'+Date.now();d.group=S.ds==='work'?'Work':'App';d.dataset=S.ds;(S.ds==='work'?S.work:S.app).push(d);}
   sv();closeModal();render();window.scrollTo(0,savedScrollY);
 };
 document.getElementById('mDelete').onclick=function(){
@@ -962,7 +969,7 @@ document.querySelector('.user-label').textContent='TODO';
 function updateHash(){
   const p=new URLSearchParams();
   if(S.user!=='all')p.set('user',S.user);
-  if(S.view!=='kanban')p.set('view',S.view);
+  if(S.view!=='today')p.set('view',S.view);
   if(S.ds!=='work')p.set('ds',S.ds);
   const h=p.toString();
   history.replaceState(null,'',h?'?'+h:location.pathname);
