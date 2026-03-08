@@ -509,11 +509,13 @@ function renderToday(){
   const overdue=all.filter(x=>isO(x.date)).sort((a,b)=>(b.stars||0)-(a.stars||0)||(b.hearts||0)-(a.hearts||0));
   const due=all.filter(x=>isT(x.date)).sort((a,b)=>(b.stars||0)-(a.stars||0)||(b.hearts||0)-(a.hearts||0));
   const working=all.filter(x=>!isT(x.date)&&!isO(x.date)&&inRange(x)).sort((a,b)=>(b.stars||0)-(a.stars||0)||(b.hearts||0)-(a.hearts||0));
+  const usedIds=new Set([...overdue,...due,...working].map(x=>x.id));
+  const ball=S.user!=='all'?all.filter(x=>x.ballOwner===S.user&&!usedIds.has(x.id)).sort((a,b)=>(b.stars||0)-(a.stars||0)||(b.hearts||0)-(a.hearts||0)):[];
   const sec=(title,icon,items)=>{
     if(!items.length)return'';
     return`<div class="td-sec"><div class="td-sec-h">${icon} ${title}<span class="td-cnt">${items.length}</span></div>${items.map(x=>sH(x)).join('')}</div>`;
   };
-  const html=sec('期限超過','🔴',overdue)+sec('今日が期限','🟠',due)+sec('作業中（今日が作業期間）','🔵',working);
+  const html=sec('期限超過','🔴',overdue)+sec('今日が期限','🟠',due)+sec('作業中（今日が作業期間）','🔵',working)+sec('ボール所在','🟢',ball);
   document.getElementById('v-today').innerHTML=`<div class="td-v">${html||'<div class="td-empty">今日のタスクはありません</div>'}</div>`;
 }
 
