@@ -220,7 +220,7 @@
   .sb.done{background:var(--green-bg);color:var(--green-t);}
 
   /* ===== TIMELINE ===== */
-  .tl-w{padding:18px 28px;}
+  .tl-w{padding:18px 28px;overflow-x:auto;}
   .tl-r{display:grid;grid-template-columns:200px 1fr;gap:14px;padding:8px 0;border-bottom:1px solid var(--border-light);align-items:center;cursor:pointer;transition:background var(--tr);border-radius:var(--r);}
   .tl-r:hover{background:var(--surface2);}
   .tl-t{font-size:12px;}.tl-t .pb{margin-bottom:3px;display:block;width:fit-content;}
@@ -814,7 +814,8 @@ function renderTimeline(){
   const ms=[],mss=[];
   for(let d=new Date(mn);d<=mx;d=new Date(d.getFullYear(),d.getMonth()+1,1)){ms.push((d.getMonth()+1)+'月');mss.push(fmtD(d));}
   const tp=pct(TODAY);
-  let h=`<div class="tl-hd"><div></div><div class="tl-ms" style="position:relative">
+  const minW=Math.max(ms.length*120,600);
+  let h=`<div style="min-width:${minW+200}px"><div class="tl-hd"><div></div><div class="tl-ms" style="position:relative">
     ${ms.map((m,i)=>`<div class="tl-m" style="left:${pct(mss[i])}%">${m}</div>`).join('')}
     <div class="tl-tl" style="left:${tp}%;height:${t.length*47+30}px;top:20px"></div>
     <div class="tl-td" style="left:${tp}%;top:6px">今日</div>
@@ -831,7 +832,7 @@ function renderTimeline(){
       <div class="tl-handle tl-handle-r"></div>
     </div></div></div>`;
   });
-  document.getElementById('v-timeline').innerHTML=`<div class="tl-w">${h}</div>`;
+  document.getElementById('v-timeline').innerHTML=`<div class="tl-w">${h}</div></div>`;
   // Make bars draggable & resizable
   document.querySelectorAll('.tl-b[data-tid]').forEach(bar=>{
     const tid=bar.dataset.tid;
