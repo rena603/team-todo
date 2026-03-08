@@ -828,9 +828,9 @@ function renderTimeline(){
     h+=`<div class="tl-r"><div class="tl-t" onclick="openModal('${x.id}')"><span class="pb pb-${pc(x.project)}">${x.project}</span><div class="tl-tn">${x.name}</div></div>
     <div class="tl-bw"><div class="tl-b s${sk(x.status)[0]}" data-tid="${x.id}" style="left:${l}%;width:${w}%">
       <div class="tl-handle tl-handle-l"></div>
-      <span class="tl-label">${dl(s)} - ${dl(e)}</span>
+      <span class="tl-label"></span>
       <div class="tl-handle tl-handle-r"></div>
-    </div></div></div>`;
+    </div><span class="tl-date-label" style="position:absolute;left:${l+w+0.5}%;top:5px;font-size:10px;color:var(--text-2);white-space:nowrap;pointer-events:none">${dl(s)} - ${dl(e)}</span></div></div>`;
   });
   document.getElementById('v-timeline').innerHTML=`<div class="tl-w">${h}</div></div>`;
   // Make bars draggable & resizable
