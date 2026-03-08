@@ -498,7 +498,7 @@ function renderBanner(){
 
 // TODAY
 function renderToday(){
-  const all=ts().filter(x=>sk(x.status)!=='done'&&(S.filter==='all'||x.project===S.filter));
+  const all=ts().filter(x=>sk(x.status)!=='done'&&(S.filter==='all'||x.project===S.filter)&&(S.user==='all'||!x.ballOwner||x.ballOwner===S.user));
   const todayStr=TODAY.toDateString();
   const inRange=t=>{
     if(!t.dateStart&&!t.dateEnd)return false;
