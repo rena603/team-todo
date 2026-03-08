@@ -370,7 +370,7 @@
   <div class="md">
     <h3>ルーティン登録</h3>
     <label>タスク名</label><input type="text" id="rmName">
-    <label>プロジェクト（任意）</label><input type="text" id="rmProject" placeholder="未設定でもOK">
+    <label>プロジェクト（任意）</label><select id="rmProject"></select>
     <label>曜日</label>
     <div class="ppl-sel" style="display:flex;gap:6px;flex-wrap:wrap">
       <label style="min-width:auto"><input type="checkbox" id="rmDay1">月</label>
@@ -1029,10 +1029,13 @@ function toggleRoutineDone(id){
 }
 function openRoutineModal(id){
   const m=document.getElementById('routineModal');
+  const ps=getProjects();
+  const rmProj=document.getElementById('rmProject');
+  rmProj.innerHTML=`<option value="">なし</option>`+ps.map(p=>`<option value="${p}">${p}</option>`).join('');
   if(id){
     const r=S.routines.find(x=>x.id===id);if(!r)return;
     document.getElementById('rmName').value=r.name;
-    document.getElementById('rmProject').value=r.project||'';
+    rmProj.value=r.project||'';
     DAY_NAMES.forEach((d,i)=>{document.getElementById('rmDay'+i).checked=r.days.includes(i);});
     const wrap=document.getElementById('rmAssigneeWrap');
     const members=[...new Set([...TEAM,...(r.assignees||[])])];
@@ -1041,7 +1044,7 @@ function openRoutineModal(id){
     m.dataset.editId=id;
   } else {
     document.getElementById('rmName').value='';
-    document.getElementById('rmProject').value='';
+    rmProj.value='';
     DAY_NAMES.forEach((d,i)=>{document.getElementById('rmDay'+i).checked=i>=1&&i<=5;});
     const wrap=document.getElementById('rmAssigneeWrap');
     wrap.innerHTML=TEAM.map(p=>`<label><input type="checkbox" value="${p}"${p==='rena'?' checked':''}>${fname(p)}</label>`).join('');
