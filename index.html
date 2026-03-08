@@ -370,7 +370,14 @@
   <div class="md">
     <h3>ルーティン登録</h3>
     <label>タスク名</label><input type="text" id="rmName">
-    <label>プロジェクト（任意）</label><select id="rmProject"></select>
+    <label>プロジェクト（任意）</label>
+    <div class="proj-wrap">
+      <select id="rmProject"></select>
+      <div class="proj-add" id="rmProjAdd">
+        <input type="text" id="rmProjNewName" placeholder="新しいプロジェクト名">
+        <button class="bt bt-p" id="rmProjAddBtn" style="padding:6px 12px;font-size:12px">追加</button>
+      </div>
+    </div>
     <label>曜日</label>
     <div class="ppl-sel" style="display:flex;gap:6px;flex-wrap:wrap">
       <label style="min-width:auto"><input type="checkbox" id="rmDay1">月</label>
@@ -1031,7 +1038,12 @@ function openRoutineModal(id){
   const m=document.getElementById('routineModal');
   const ps=getProjects();
   const rmProj=document.getElementById('rmProject');
-  rmProj.innerHTML=`<option value="">なし</option>`+ps.map(p=>`<option value="${p}">${p}</option>`).join('');
+  rmProj.innerHTML=`<option value="">なし</option>`+ps.map(p=>`<option value="${p}">${p}</option>`).join('')+`<option value="__new__">+ 新規プロジェクト追加</option>`;
+  document.getElementById('rmProjAdd').classList.remove('show');
+  rmProj.onchange=function(){
+    if(rmProj.value==='__new__'){document.getElementById('rmProjAdd').classList.add('show');document.getElementById('rmProjNewName').focus();}
+    else{document.getElementById('rmProjAdd').classList.remove('show');}
+  };
   if(id){
     const r=S.routines.find(x=>x.id===id);if(!r)return;
     document.getElementById('rmName').value=r.name;
@@ -1054,10 +1066,18 @@ function openRoutineModal(id){
   m.classList.add('open');
 }
 function closeRoutineModal(){document.getElementById('routineModal').classList.remove('open');}
+document.getElementById('rmProjAddBtn').onclick=function(){
+  const name=document.getElementById('rmProjNewName').value.trim();if(!name)return;
+  const sel=document.getElementById('rmProject');
+  sel.insertAdjacentHTML('beforeend',`<option value="${name}">${name}</option>`);
+  const newOpt=sel.querySelector('option[value="__new__"]');sel.appendChild(newOpt);
+  sel.value=name;document.getElementById('rmProjAdd').classList.remove('show');document.getElementById('rmProjNewName').value='';
+};
 document.addEventListener('click',e=>{
   if(e.target.id==='rmSave'){
     const nm=document.getElementById('rmName').value.trim();if(!nm)return;
-    const proj=document.getElementById('rmProject').value.trim();
+    const rmProjVal=document.getElementById('rmProject').value;
+    const proj=rmProjVal==='__new__'?document.getElementById('rmProjNewName').value.trim():rmProjVal;
     const days=[];DAY_NAMES.forEach((d,i)=>{if(document.getElementById('rmDay'+i).checked)days.push(i);});
     const assignees=[...document.querySelectorAll('#rmAssigneeWrap input:checked')].map(i=>i.value);
     const editId=document.getElementById('routineModal').dataset.editId;
