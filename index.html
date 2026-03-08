@@ -364,6 +364,31 @@
   </div>
 </div>
 
+<div class="mo" id="routineModal">
+  <div class="md">
+    <h3>ルーティン登録</h3>
+    <label>タスク名</label><input type="text" id="rmName">
+    <label>プロジェクト（任意）</label><input type="text" id="rmProject" placeholder="未設定でもOK">
+    <label>曜日</label>
+    <div class="ppl-sel" style="display:flex;gap:6px;flex-wrap:wrap">
+      <label style="min-width:auto"><input type="checkbox" id="rmDay1">月</label>
+      <label style="min-width:auto"><input type="checkbox" id="rmDay2">火</label>
+      <label style="min-width:auto"><input type="checkbox" id="rmDay3">水</label>
+      <label style="min-width:auto"><input type="checkbox" id="rmDay4">木</label>
+      <label style="min-width:auto"><input type="checkbox" id="rmDay5">金</label>
+      <label style="min-width:auto"><input type="checkbox" id="rmDay6">土</label>
+      <label style="min-width:auto"><input type="checkbox" id="rmDay0">日</label>
+    </div>
+    <label>担当者</label>
+    <div class="ppl-sel" id="rmAssigneeWrap"></div>
+    <div class="ma">
+      <button class="bt bt-d" id="rmDelete" style="display:none;margin-right:auto">削除</button>
+      <button class="bt bt-g" id="rmCancel">キャンセル</button>
+      <button class="bt bt-p" id="rmSave">保存</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SHEET_ID='1Vc6qkfGUjTtGBCyCzSKe0kIpX2mr0Qvtf6_u7B4JYZE';
 const SHEET_CSV=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
@@ -380,7 +405,14 @@ const DARK_TEXT_USERS=['rena','Tatsuya Eguchi'];
 function userColor(name){return USER_COLORS[name]||FALLBACK_COLORS[Math.abs([...name].reduce((h,c)=>h*31+c.charCodeAt(0),0))%FALLBACK_COLORS.length];}
 function userTextColor(name){return DARK_TEXT_USERS.includes(name)?'#1a1d23':'#fff';}
 
-let S={view:'today',ds:'work',filter:'all',user:'all',work:[],app:[],editId:null,mS:0,mH:0};
+let S={view:'today',ds:'work',filter:'all',user:'all',work:[],app:[],editId:null,mS:0,mH:0,routines:[]};
+const RKEY='rena-todo-routines';
+const DAY_NAMES=['日','月','火','水','木','金','土'];
+function ldRoutines(){const s=localStorage.getItem(RKEY);if(s)S.routines=JSON.parse(s);}
+function svRoutines(){localStorage.setItem(RKEY,JSON.stringify(S.routines));}
+function routineDoneKey(){return'rena-todo-rdone-'+TODAY.toISOString().slice(0,10);}
+function getRoutineDone(){const s=localStorage.getItem(routineDoneKey());return s?JSON.parse(s):[];}
+function setRoutineDone(ids){localStorage.setItem(routineDoneKey(),JSON.stringify(ids));}
 
 function parseCSV(text){
   const rows=[],fields=[];let cur='',inQ=false;
@@ -515,7 +547,14 @@ function renderToday(){
     if(!items.length)return'';
     return`<div class="td-sec"><div class="td-sec-h">${icon} ${title}<span class="td-cnt">${items.length}</span></div>${items.map(x=>sH(x)).join('')}</div>`;
   };
-  const html=sec('期限超過','🔴',overdue)+sec('今日が期限','🟠',due)+sec('作業中（今日が作業期間）','🔵',working)+sec('ボール所在','🟢',ball);
+  // Routines for today's day of week
+  const todayDow=TODAY.getDay();
+  const todayRoutines=S.routines.filter(r=>r.days.includes(todayDow)&&(S.user==='all'||(r.assignees||[]).includes(S.user)));
+  const doneIds=getRoutineDone();
+  const pendingRoutines=todayRoutines.filter(r=>!doneIds.includes(r.id));
+  const doneRoutines=todayRoutines.filter(r=>doneIds.includes(r.id));
+  const routineHtml=`<div class="td-sec"><div class="td-sec-h" style="display:flex;align-items:center;gap:8px">🔁 ルーティン<span class="td-cnt">${pendingRoutines.length}/${todayRoutines.length}</span><button onclick="openRoutineModal()" style="margin-left:auto;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">+ 追加</button></div>${pendingRoutines.map(r=>`<div class="s" style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" style="width:16px;height:16px;cursor:pointer" onclick="event.stopPropagation();toggleRoutineDone('${r.id}')"><div style="flex:1" onclick="openRoutineModal('${r.id}')"><div class="sn">${r.name}</div>${r.project?`<span class="pb pb-${pc(r.project)}">${r.project}</span>`:''}<span style="font-size:10px;color:var(--text-3);margin-left:6px">${r.days.map(d=>DAY_NAMES[d]).join(' ')}</span></div></div>`).join('')}${doneRoutines.map(r=>`<div class="s" style="display:flex;align-items:center;gap:8px;opacity:0.4;cursor:pointer"><input type="checkbox" checked style="width:16px;height:16px;cursor:pointer" onclick="event.stopPropagation();toggleRoutineDone('${r.id}')"><div style="flex:1" onclick="openRoutineModal('${r.id}')"><div class="sn" style="text-decoration:line-through">${r.name}</div></div></div>`).join('')}</div>`;
+  const html=sec('期限超過','🔴',overdue)+sec('今日が期限','🟠',due)+sec('作業中（今日が作業期間）','🔵',working)+sec('ボール所在','🟢',ball)+routineHtml;
   document.getElementById('v-today').innerHTML=`<div class="td-v">${html||'<div class="td-empty">今日のタスクはありません</div>'}</div>`;
 }
 
@@ -949,6 +988,56 @@ document.getElementById('mDelete').onclick=function(){
 document.getElementById('modal').onclick=function(e){if(e.target===this)closeModal();};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
+// Routine functions
+function toggleRoutineDone(id){
+  const done=getRoutineDone();
+  if(done.includes(id))setRoutineDone(done.filter(x=>x!==id));
+  else setRoutineDone([...done,id]);
+  render();
+}
+function openRoutineModal(id){
+  const m=document.getElementById('routineModal');
+  if(id){
+    const r=S.routines.find(x=>x.id===id);if(!r)return;
+    document.getElementById('rmName').value=r.name;
+    document.getElementById('rmProject').value=r.project||'';
+    DAY_NAMES.forEach((d,i)=>{document.getElementById('rmDay'+i).checked=r.days.includes(i);});
+    const wrap=document.getElementById('rmAssigneeWrap');
+    const members=[...new Set([...TEAM,...(r.assignees||[])])];
+    wrap.innerHTML=members.map(p=>`<label><input type="checkbox" value="${p}"${(r.assignees||[]).includes(p)?' checked':''}>${fname(p)}</label>`).join('');
+    document.getElementById('rmDelete').style.display='block';
+    m.dataset.editId=id;
+  } else {
+    document.getElementById('rmName').value='';
+    document.getElementById('rmProject').value='';
+    DAY_NAMES.forEach((d,i)=>{document.getElementById('rmDay'+i).checked=i>=1&&i<=5;});
+    const wrap=document.getElementById('rmAssigneeWrap');
+    wrap.innerHTML=TEAM.map(p=>`<label><input type="checkbox" value="${p}"${p==='rena'?' checked':''}>${fname(p)}</label>`).join('');
+    document.getElementById('rmDelete').style.display='none';
+    m.dataset.editId='';
+  }
+  m.classList.add('open');
+}
+function closeRoutineModal(){document.getElementById('routineModal').classList.remove('open');}
+document.addEventListener('click',e=>{
+  if(e.target.id==='rmSave'){
+    const nm=document.getElementById('rmName').value.trim();if(!nm)return;
+    const proj=document.getElementById('rmProject').value.trim();
+    const days=[];DAY_NAMES.forEach((d,i)=>{if(document.getElementById('rmDay'+i).checked)days.push(i);});
+    const assignees=[...document.querySelectorAll('#rmAssigneeWrap input:checked')].map(i=>i.value);
+    const editId=document.getElementById('routineModal').dataset.editId;
+    if(editId){const r=S.routines.find(x=>x.id===editId);if(r){r.name=nm;r.project=proj;r.days=days;r.assignees=assignees;}}
+    else{S.routines.push({id:'r'+Date.now(),name:nm,project:proj,days,assignees});}
+    svRoutines();closeRoutineModal();render();
+  }
+  if(e.target.id==='rmDelete'){
+    const editId=document.getElementById('routineModal').dataset.editId;
+    if(editId){S.routines=S.routines.filter(x=>x.id!==editId);svRoutines();closeRoutineModal();render();}
+  }
+  if(e.target.id==='rmCancel')closeRoutineModal();
+  if(e.target===document.getElementById('routineModal'))closeRoutineModal();
+});
+
 const VI={today:'v-today',kanban:'v-kanban',matrix:'v-matrix',ball:'v-ball',list:'v-list',timeline:'v-timeline'};
 document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(b=>{
   b.onclick=()=>{document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(x=>x.classList.remove('on'));
@@ -1005,7 +1094,7 @@ function render(){
   // Restore ball column scroll positions
   document.querySelectorAll('.bl-c').forEach((c,i)=>{if(ballScrolls[i])c.scrollTop=ballScrolls[i];});
 }
-ld();loadHash();render();updateHash();fetchSheet();
+ld();ldRoutines();loadHash();render();updateHash();fetchSheet();
 </script>
 </body>
 </html>
