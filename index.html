@@ -814,7 +814,8 @@ function renderTimeline(){
   const ms=[],mss=[];
   for(let d=new Date(mn);d<=mx;d=new Date(d.getFullYear(),d.getMonth()+1,1)){ms.push((d.getMonth()+1)+'月');mss.push(fmtD(d));}
   const tp=pct(TODAY);
-  const minW=Math.max(ms.length*200,800);
+  const vw=window.innerWidth-260;// 画面幅 - 左のタスク名カラム分
+  const minW=Math.max(ms.length*vw,800);
   let h=`<div style="min-width:${minW+200}px"><div class="tl-hd"><div></div><div class="tl-ms" style="position:relative">
     ${ms.map((m,i)=>`<div class="tl-m" style="left:${pct(mss[i])}%">${m}</div>`).join('')}
     <div class="tl-tl" style="left:${tp}%;height:${t.length*47+30}px;top:20px"></div>
