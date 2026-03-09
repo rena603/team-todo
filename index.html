@@ -994,9 +994,10 @@ document.getElementById('mSave').onclick=function(){
   sv();closeModal();render();window.scrollTo(0,savedScrollY);
 };
 document.getElementById('mDelete').onclick=function(){
-  if(!S.editId)return;const d=fds(S.editId);
-  if(d==='work')S.work=S.work.filter(t=>t.id!==S.editId);else S.app=S.app.filter(t=>t.id!==S.editId);
+  if(!S.editId)return;const id=S.editId;const d=fds(id);
+  if(d==='work')S.work=S.work.filter(t=>t.id!==id);else S.app=S.app.filter(t=>t.id!==id);
   sv();closeModal();render();window.scrollTo(0,savedScrollY);
+  fetch(API_BASE+'/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).catch(e=>console.warn('API delete failed',e));
 };
 document.getElementById('modal').onclick=function(e){if(e.target===this)closeModal();};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
