@@ -225,7 +225,7 @@
   .tl-r:hover{background:var(--surface2);}.tl-r:hover .tl-t{background:var(--surface2);}
   .tl-t{font-size:12px;position:sticky;left:0;background:var(--surface);z-index:5;padding:8px 14px 8px 28px;margin-left:-28px;width:228px;min-width:228px;max-width:228px;box-sizing:border-box;border-right:2px solid var(--border);}.tl-t .pb{margin-bottom:3px;display:block;width:fit-content;}
   .tl-tn{font-weight:500;margin-top:2px;}
-  .tl-bw{position:relative;height:26px;flex:1;min-width:0;}
+  .tl-bw{position:relative;height:26px;flex:1;min-width:0;overflow:hidden;}
   .tl-b{position:absolute;height:26px;border-radius:6px;display:flex;align-items:center;padding:0 4px;font-size:10px;font-weight:600;white-space:nowrap;min-width:70px;cursor:grab;user-select:none;}
   .tl-b:active{cursor:grabbing;}
   .tl-label{flex:1;text-align:center;pointer-events:none;padding:0 4px;overflow:hidden;text-overflow:ellipsis;}
@@ -828,11 +828,11 @@ function renderTimeline(){
     const rawL=pct(s),rawW=Math.max(pct(e)-pct(s),1.5);
     const l=Math.max(rawL,0),w=Math.max(rawW-(l-rawL),1.5);
     h+=`<div class="tl-r"><div class="tl-t" onclick="openModal('${x.id}')"><span class="pb pb-${pc(x.project)}">${x.project}</span><div class="tl-tn">${x.name}</div></div>
-    <div class="tl-bw"><div class="tl-b s${sk(x.status)[0]}" data-tid="${x.id}" style="left:${l}%;width:${w}%">
+    <div style="flex:1;min-width:0;position:relative"><div class="tl-bw"><div class="tl-b s${sk(x.status)[0]}" data-tid="${x.id}" style="left:${l}%;width:${w}%">
       <div class="tl-handle tl-handle-l"></div>
       <span class="tl-label"></span>
       <div class="tl-handle tl-handle-r"></div>
-    </div><span class="tl-date-label" style="position:absolute;left:${l+w+0.5}%;top:5px;font-size:10px;color:var(--text-2);white-space:nowrap;pointer-events:none">${dl(s)} - ${dl(e)}</span></div></div>`;
+    </div></div><span style="position:absolute;left:${l+w+0.5}%;top:0;font-size:10px;color:var(--text-2);white-space:nowrap;pointer-events:none">${dl(s)} - ${dl(e)}</span></div></div>`;
   });
   document.getElementById('v-timeline').innerHTML=`<div class="tl-w">${h}</div></div>`;
   // Make bars draggable & resizable
