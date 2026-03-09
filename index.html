@@ -222,8 +222,8 @@
   /* ===== TIMELINE ===== */
   .tl-w{padding:18px 28px;overflow-x:auto;}
   .tl-r{display:grid;grid-template-columns:200px 1fr;gap:14px;padding:8px 0;border-bottom:1px solid var(--border-light);align-items:center;cursor:pointer;transition:background var(--tr);border-radius:var(--r);position:relative;}
-  .tl-r:hover{background:var(--surface2);}
-  .tl-t{font-size:12px;position:sticky;left:0;background:var(--bg);z-index:5;padding-right:14px;width:200px;min-width:200px;box-shadow:8px 0 12px -4px rgba(0,0,0,0.08);}.tl-t .pb{margin-bottom:3px;display:block;width:fit-content;}
+  .tl-r:hover{background:var(--surface2);}.tl-r:hover .tl-t{background:var(--surface2);}
+  .tl-t{font-size:12px;position:sticky;left:0;background:var(--surface);z-index:5;padding:8px 14px 8px 8px;width:200px;min-width:200px;box-sizing:border-box;border-right:2px solid var(--border);}.tl-t .pb{margin-bottom:3px;display:block;width:fit-content;}
   .tl-tn{font-weight:500;margin-top:2px;}
   .tl-bw{position:relative;height:26px;overflow:visible;clip-path:inset(0 -100% 0 0);}
   .tl-b{position:absolute;height:26px;border-radius:6px;display:flex;align-items:center;padding:0 4px;font-size:10px;font-weight:600;white-space:nowrap;min-width:70px;cursor:grab;user-select:none;}
@@ -239,7 +239,7 @@
   .tl-b.sd{background:linear-gradient(135deg,#6ee7b7,#10b981);color:#fff;}
   .tl-tl{position:absolute;width:2px;background:var(--red);z-index:10;border-radius:1px;}
   .tl-td{position:absolute;top:0;font-size:9px;font-weight:700;color:var(--red);background:var(--red-bg);padding:1px 5px;border-radius:3px;transform:translateX(-50%);white-space:nowrap;}
-  .tl-hd{display:grid;grid-template-columns:200px 1fr;gap:14px;padding:4px 0;margin-bottom:4px;position:sticky;top:0;z-index:6;background:var(--bg);}.tl-hd>div:first-child{position:sticky;left:0;background:var(--bg);z-index:7;}
+  .tl-hd{display:grid;grid-template-columns:200px 1fr;gap:14px;padding:4px 0;margin-bottom:4px;position:sticky;top:0;z-index:6;background:var(--bg);}.tl-hd>div:first-child{position:sticky;left:0;background:var(--surface);z-index:7;border-right:2px solid var(--border);padding:4px 14px 4px 8px;box-sizing:border-box;width:200px;min-width:200px;}
   .tl-ms{display:flex;font-size:10px;font-weight:600;color:var(--text-3);position:relative;}
   .tl-m{position:absolute;}
 
