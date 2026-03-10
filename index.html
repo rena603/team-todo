@@ -121,13 +121,21 @@
   .av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;margin-left:-5px;border:1.5px solid #fff;flex-shrink:0;}
   .av:first-child{margin-left:0;}
 
-  .s-lib{background:#f3eaff;border-left:3px solid #7c3aed;} .s-ao{background:#e4fbe9;border-left:3px solid #22c55e;} .s-ch{background:#e3f0ff;border-left:3px solid #3b82f6;}
-  .s-sa{background:#fce8f3;border-left:3px solid #ec4899;} .s-sh{background:#fff6d6;border-left:3px solid #f59e0b;} .s-df{background:#f0f1f4;border-left:3px solid #9da3ae;}
-
+  /* Project colors — applied dynamically via inline styles now */
+  .s-df{background:#f0f1f4;border-left:3px solid #9da3ae;}
   .pb{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;display:inline-block;letter-spacing:.3px;text-transform:uppercase;}
-  .pb-lib{background:#e9d5ff;color:#7c3aed;} .pb-ao{background:#bbf7d0;color:#166534;}
-  .pb-ch{background:#bfdbfe;color:#1e40af;} .pb-sa{background:#fbcfe8;color:#9d174d;}
-  .pb-sh{background:#fde68a;color:#92400e;} .pb-df{background:var(--surface3);color:var(--text-2);}
+  .pb-df{background:var(--surface3);color:var(--text-2);}
+
+  /* ===== PROJECT MODAL ===== */
+  .pm-list{display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto;margin-top:12px;}
+  .pm-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r);background:var(--surface2);}
+  .pm-name{flex:1;font-size:13px;font-weight:600;}
+  .pm-cnt{font-size:11px;color:var(--text-3);}
+  .pm-colors{display:flex;gap:4px;}
+  .pm-c{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0;}
+  .pm-c:hover{transform:scale(1.15);}
+  .pm-c.on{border-color:var(--text);box-shadow:0 0 0 2px #fff,0 0 0 4px var(--text);}
+  .pm-preview{width:6px;height:28px;border-radius:3px;flex-shrink:0;}
 
   /* avatar colors */
   .avc0{background:#4f6af5;}.avc1{background:#10b981;}.avc2{background:#f59e0b;}.avc3{background:#ec4899;}.avc4{background:#8b5cf6;}.avc5{background:#f97316;}
@@ -399,6 +407,14 @@
   </div>
 </div>
 
+<div class="mo" id="projModal">
+  <div class="md" style="max-width:540px">
+    <h3>案件カラー設定</h3>
+    <div class="pm-list" id="pmList"></div>
+    <div class="ma"><button class="bt bt-g" onclick="document.getElementById('projModal').classList.remove('open')">閉じる</button></div>
+  </div>
+</div>
+
 <script>
 const SHEET_ID='1Vc6qkfGUjTtGBCyCzSKe0kIpX2mr0Qvtf6_u7B4JYZE';
 const SHEET_CSV=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
@@ -471,7 +487,33 @@ function ts(){const d=S.ds==='work'?S.work:S.app;return S.user==='all'?d:d.filte
 function allTasks(){return[...S.work,...S.app];}
 function ft(id){return S.work.find(t=>t.id===id)||S.app.find(t=>t.id===id);}
 function fds(id){return S.work.find(t=>t.id===id)?'work':'app';}
-function pc(p){if(p.includes('リブセンス'))return'lib';if(p.includes('青天気'))return'ao';if(p.includes('中国銀行'))return'ch';if(p.includes('SA-DNP'))return'sa';if(p.includes('社内')||p.includes('アプリ'))return'sh';return'df';}
+// === PROJECT COLOR SYSTEM ===
+const PROJ_PALETTE=[
+  {id:'purple',main:'#7c3aed',bg:'#f3eaff',pbBg:'#e9d5ff',pbTx:'#7c3aed'},
+  {id:'green', main:'#22c55e',bg:'#e4fbe9',pbBg:'#bbf7d0',pbTx:'#166534'},
+  {id:'blue',  main:'#3b82f6',bg:'#e3f0ff',pbBg:'#bfdbfe',pbTx:'#1e40af'},
+  {id:'pink',  main:'#ec4899',bg:'#fce8f3',pbBg:'#fbcfe8',pbTx:'#9d174d'},
+  {id:'yellow',main:'#f59e0b',bg:'#fff6d6',pbBg:'#fde68a',pbTx:'#92400e'},
+  {id:'teal',  main:'#14b8a6',bg:'#e0faf6',pbBg:'#99f6e4',pbTx:'#0f766e'},
+  {id:'red',   main:'#ef4444',bg:'#fef2f2',pbBg:'#fecaca',pbTx:'#dc2626'},
+  {id:'indigo',main:'#6366f1',bg:'#eef2ff',pbBg:'#c7d2fe',pbTx:'#4338ca'},
+  {id:'gray',  main:'#9da3ae',bg:'#f0f1f4',pbBg:'#e5e7eb',pbTx:'#6b7280'},
+];
+const PROJ_COLORS_KEY='rena-todo-projcolors';
+let projColorMap={};
+function ldProjColors(){const s=localStorage.getItem(PROJ_COLORS_KEY);if(s)projColorMap=JSON.parse(s);}
+function svProjColors(){localStorage.setItem(PROJ_COLORS_KEY,JSON.stringify(projColorMap));}
+function getProjColor(p){
+  if(!p)return PROJ_PALETTE[8]; // gray
+  if(projColorMap[p]){const c=PROJ_PALETTE.find(x=>x.id===projColorMap[p]);if(c)return c;}
+  // auto-assign: hash project name to palette index (skip gray)
+  const h=Math.abs([...p].reduce((a,c)=>a*31+c.charCodeAt(0),0))%(PROJ_PALETTE.length-1);
+  return PROJ_PALETTE[h];
+}
+function pc(p){return'_dyn';} // kept for compat
+function pbStyle(p){const c=getProjColor(p);return`background:${c.pbBg};color:${c.pbTx}`;}
+function pbH(p){return`<span class="pb" style="${pbStyle(p)}">${p}</span>`;}
+ldProjColors();
 function sk(s){return s==='progress'?'progress':s==='waiting'?'waiting':s==='done'?'done':'todo';}
 function dl(d){if(!d)return'';const t=new Date(d);return`${t.getMonth()+1}/${t.getDate()}`;}
 function isT(d){return d&&new Date(d).toDateString()===TODAY.toDateString();}
@@ -492,17 +534,19 @@ function getProjects(){return[...new Set(allTasks().map(t=>t.project).filter(Boo
 function getAllPeople(){const p=new Set();allTasks().forEach(t=>{(t.assignees||[]).forEach(a=>p.add(a));if(t.ballOwner&&t.ballOwner.trim())p.add(t.ballOwner.trim());});return[...p].sort();}
 
 function sH(t,o={}){
-  const td=isT(t.date),ov=isO(t.date),c=pc(t.project);
+  const td=isT(t.date),ov=isO(t.date);
+  const col=getProjColor(t.project);
   const cls=td?'td':ov?'od':'';
   const st=(t.stars||0)>0?`<span class="st">${'★'.repeat(t.stars)}</span>`:'';
   const ht=(t.hearts||0)>0?`<span class="ht">${'♡'.repeat(t.hearts)}</span>`:'';
   const rt=(st||ht)?`<div class="s-r">${st}${ht}</div>`:'';
   const dr=o.noDrag?'':`draggable="true" ondragstart="onDS(event,'${t.id}')" ondragend="onDE(event)"`;
-  const sty=o.style||'';
+  const baseSty=`background:${col.bg};border-left:3px solid ${col.main};`;
+  const sty=baseSty+(o.style||'');
   const extra=o.extra||'';
-  return`<div class="s s-${c} ${cls}" ${dr} ${extra} onclick="openModal('${t.id}')" style="${sty}">
+  return`<div class="s ${cls}" ${dr} ${extra} onclick="openModal('${t.id}')" style="${sty}">
     <div class="s-t">${t.name}</div>${rt}
-    <div class="s-m"><span class="pb pb-${c}">${t.project}</span>
+    <div class="s-m"><span class="pb" style="background:${col.pbBg};color:${col.pbTx}">${t.project}</span>
     ${t.date?`<span style="${ov?'color:var(--red);font-weight:600':td?'color:var(--orange);font-weight:600':''}">${ov?'超過 ':''}${dl(t.date)}</span>`:''}
     ${avH(t.assignees)}</div></div>`;
 }
@@ -524,8 +568,31 @@ function renderSum(){
 function renderFilters(){
   const t=ts(),ps=[...new Set(t.map(x=>x.project))];
   document.getElementById('filters').innerHTML=`<button class="fc ${S.filter==='all'?'on':''}" data-p="all">すべて</button>`+
-    ps.map(p=>`<button class="fc ${S.filter===p?'on':''}" data-p="${p}">${p}</button>`).join('');
-  document.getElementById('filters').querySelectorAll('.fc').forEach(b=>{b.onclick=()=>{S.filter=b.dataset.p;render();}});
+    ps.map(p=>{const col=getProjColor(p);return`<button class="fc ${S.filter===p?'on':''}" data-p="${p}" style="border-left:3px solid ${col.main}">${p}</button>`;}).join('')+
+    `<button class="fc" style="margin-left:auto;font-size:13px" onclick="openProjModal()">🎨</button>`;
+  document.getElementById('filters').querySelectorAll('.fc[data-p]').forEach(b=>{b.onclick=()=>{S.filter=b.dataset.p;render();}});
+}
+
+function openProjModal(){
+  const ps=getProjects();
+  const all=allTasks();
+  document.getElementById('pmList').innerHTML=ps.map(p=>{
+    const col=getProjColor(p);
+    const cnt=all.filter(t=>t.project===p).length;
+    return`<div class="pm-row">
+      <div class="pm-preview" style="background:${col.main}"></div>
+      <div class="pm-name">${p}</div>
+      <div class="pm-cnt">${cnt}件</div>
+      <div class="pm-colors">${PROJ_PALETTE.map(c=>`<div class="pm-c ${col.id===c.id?'on':''}" style="background:${c.main}" onclick="setProjColor('${p.replace(/'/g,"\\'")}','${c.id}')"></div>`).join('')}</div>
+    </div>`;
+  }).join('')||'<div style="color:var(--text-3);padding:16px;text-align:center">案件がありません</div>';
+  document.getElementById('projModal').classList.add('open');
+}
+function setProjColor(proj,colorId){
+  projColorMap[proj]=colorId;
+  svProjColors();
+  openProjModal(); // refresh modal
+  render();
 }
 
 function renderBanner(){
@@ -533,7 +600,7 @@ function renderBanner(){
   if(!t.length){el.style.display='none';return;}el.style.display='block';
   const td=t.filter(x=>isT(x.date)),od=t.filter(x=>isO(x.date));
   let h=`<div class="banner"><div class="banner-icon">!</div><div><h3>TODAY ${dl(TODAY)}</h3>`;
-  td.forEach(x=>{h+=`<div class="tn"><span class="pb pb-${pc(x.project)}">${x.project}</span>${x.name}</div>`;});
+  td.forEach(x=>{h+=`<div class="tn">${pbH(x.project)}${x.name}</div>`;});
   if(od.length)h+=`<div style="margin-top:3px;font-size:11px;color:var(--red);font-weight:600">+ ${od.length}件の期限超過タスク</div>`;
   h+=`</div></div>`;el.innerHTML=h;
 }
@@ -563,7 +630,7 @@ function renderToday(){
   const doneIds=getRoutineDone();
   const pendingRoutines=todayRoutines.filter(r=>!doneIds.includes(r.id));
   const doneRoutines=todayRoutines.filter(r=>doneIds.includes(r.id));
-  const routineItems=todayRoutines.length?`<div class="td-cards">`+pendingRoutines.map(r=>`<div class="s s-${r.project?pc(r.project):'df'}" style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" style="width:16px;height:16px;cursor:pointer" onclick="event.stopPropagation();toggleRoutineDone('${r.id}')"><div style="flex:1" onclick="openRoutineModal('${r.id}')"><div class="sn">${r.name}</div>${r.project?`<span class="pb pb-${pc(r.project)}">${r.project}</span>`:''}<span style="font-size:10px;color:var(--text-3);margin-left:6px">${r.days.map(d=>DAY_NAMES[d]).join(' ')}</span></div></div>`).join('')+doneRoutines.map(r=>`<div class="s s-${r.project?pc(r.project):'df'}" style="display:flex;align-items:center;gap:8px;opacity:0.4;cursor:pointer"><input type="checkbox" checked style="width:16px;height:16px;cursor:pointer" onclick="event.stopPropagation();toggleRoutineDone('${r.id}')"><div style="flex:1" onclick="openRoutineModal('${r.id}')"><div class="sn" style="text-decoration:line-through">${r.name}</div></div></div>`).join('')+`</div>`:`<div class="td-cards"><div style="color:var(--text-3);font-size:13px;padding:12px 16px">今日のルーティンはありません。<span style="color:var(--accent);cursor:pointer" onclick="document.querySelector('[data-view=routine]').click()">ルーティンタブ</span>から追加できます。</div></div>`;
+  const routineItems=todayRoutines.length?`<div class="td-cards">`+pendingRoutines.map(r=>`<div class="s" style="background:${getProjColor(r.project).bg};border-left:3px solid ${getProjColor(r.project).main};display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" style="width:16px;height:16px;cursor:pointer" onclick="event.stopPropagation();toggleRoutineDone('${r.id}')"><div style="flex:1" onclick="openRoutineModal('${r.id}')"><div class="sn">${r.name}</div>${r.project?`${pbH(r.project)}`:''}<span style="font-size:10px;color:var(--text-3);margin-left:6px">${r.days.map(d=>DAY_NAMES[d]).join(' ')}</span></div></div>`).join('')+doneRoutines.map(r=>`<div class="s" style="background:${getProjColor(r.project).bg};border-left:3px solid ${getProjColor(r.project).main};display:flex;align-items:center;gap:8px;opacity:0.4;cursor:pointer"><input type="checkbox" checked style="width:16px;height:16px;cursor:pointer" onclick="event.stopPropagation();toggleRoutineDone('${r.id}')"><div style="flex:1" onclick="openRoutineModal('${r.id}')"><div class="sn" style="text-decoration:line-through">${r.name}</div></div></div>`).join('')+`</div>`:`<div class="td-cards"><div style="color:var(--text-3);font-size:13px;padding:12px 16px">今日のルーティンはありません。<span style="color:var(--accent);cursor:pointer" onclick="document.querySelector('[data-view=routine]').click()">ルーティンタブ</span>から追加できます。</div></div>`;
   const routineHtml=`<div class="td-sec"><div class="td-sec-h">🔁 ルーティン${todayRoutines.length?`<span class="td-cnt">${pendingRoutines.length}/${todayRoutines.length}</span>`:''}</div>${routineItems}</div>`;
   const html=sec('期限超過','🔴',overdue)+sec('今日が期限','🟠',due)+sec('作業中（今日が作業期間）','🔵',working)+sec('ボール所在','🟢',ball)+routineHtml;
   document.getElementById('v-today').innerHTML=`<div class="td-v">${html||'<div class="td-empty">今日のタスクはありません</div>'}</div>`;
@@ -788,7 +855,7 @@ function renderList(){
     <tbody>${t.map(x=>{const ov=isO(x.date),td=isT(x.date);
       return`<tr onclick="openModal('${x.id}')">
         <td><span class="sb ${sk(x.status)}">${SL[sk(x.status)]}</span></td>
-        <td><span class="pb pb-${pc(x.project)}">${x.project}</span></td>
+        <td>${pbH(x.project)}</td>
         <td style="font-weight:500;max-width:200px">${x.name}</td>
         <td style="color:${x.stars?'var(--yellow)':'var(--text-3)'};letter-spacing:2px">${x.stars?'★'.repeat(x.stars):'-'}</td>
         <td style="color:${x.hearts?'var(--pink)':'var(--text-3)'};letter-spacing:2px">${x.hearts?'♡'.repeat(x.hearts):'-'}</td>
@@ -828,7 +895,7 @@ function renderTimeline(){
     if(!s||!e)return;
     const rawL=pct(s),rawW=Math.max(pct(e)-pct(s),1.5);
     const l=Math.max(rawL,0),w=Math.max(rawW-(l-rawL),1.5);
-    h+=`<div class="tl-r"><div class="tl-t" onclick="openModal('${x.id}')"><span class="pb pb-${pc(x.project)}">${x.project}</span><div class="tl-tn">${x.name}</div></div>
+    h+=`<div class="tl-r"><div class="tl-t" onclick="openModal('${x.id}')">${pbH(x.project)}<div class="tl-tn">${x.name}</div></div>
     <div style="flex:1;min-width:0;position:relative"><div class="tl-bw"><div class="tl-b s${sk(x.status)[0]}" data-tid="${x.id}" style="left:${l}%;width:${w}%">
       <div class="tl-handle tl-handle-l"></div>
       <span class="tl-label"></span>
@@ -1021,7 +1088,7 @@ function renderRoutine(){
       const assigneeAvas=(r.assignees||[]).map(a=>`<span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:50%;font-size:9px;font-weight:700;background:${userColor(a)};color:${userTextColor(a)}">${fname(a)[0]}</span>`).join('');
       h+=`<div class="s" style="padding:8px;cursor:pointer;font-size:12px" onclick="openRoutineModal('${r.id}')">
         <div class="sn" style="font-weight:600;font-size:12px">${r.name}</div>
-        ${r.project?`<span class="pb pb-${pc(r.project)}" style="margin-top:4px;font-size:10px">${r.project}</span>`:''}
+        ${r.project?`<span class="pb" style="${pbStyle(r.project)};margin-top:4px;font-size:10px">${r.project}</span>`:''}
         <div style="display:flex;gap:2px;margin-top:4px">${assigneeAvas}</div>
       </div>`;
     });}
