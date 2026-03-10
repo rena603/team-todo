@@ -121,8 +121,8 @@
   .av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;margin-left:-5px;border:1.5px solid #fff;flex-shrink:0;}
   .av:first-child{margin-left:0;}
 
-  .s-lib{background:#f3eaff;} .s-ao{background:#e4fbe9;} .s-ch{background:#e3f0ff;}
-  .s-sa{background:#fce8f3;} .s-sh{background:#fff6d6;} .s-df{background:#f0f1f4;}
+  .s-lib{background:#f3eaff;border-left:3px solid #7c3aed;} .s-ao{background:#e4fbe9;border-left:3px solid #22c55e;} .s-ch{background:#e3f0ff;border-left:3px solid #3b82f6;}
+  .s-sa{background:#fce8f3;border-left:3px solid #ec4899;} .s-sh{background:#fff6d6;border-left:3px solid #f59e0b;} .s-df{background:#f0f1f4;border-left:3px solid #9da3ae;}
 
   .pb{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;display:inline-block;letter-spacing:.3px;text-transform:uppercase;}
   .pb-lib{background:#e9d5ff;color:#7c3aed;} .pb-ao{background:#bbf7d0;color:#166534;}
@@ -133,10 +133,11 @@
   .avc0{background:#4f6af5;}.avc1{background:#10b981;}.avc2{background:#f59e0b;}.avc3{background:#ec4899;}.avc4{background:#8b5cf6;}.avc5{background:#f97316;}
 
   /* ===== TODAY ===== */
-  .td-v{padding:18px 28px;max-width:700px;}
+  .td-v{padding:18px 28px;}
   .td-sec{margin-bottom:24px;}
-  .td-sec-h{font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+  .td-sec-h{font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
   .td-sec-h .td-cnt{font-size:11px;color:var(--text-3);font-weight:500;background:var(--surface2);padding:2px 8px;border-radius:100px;}
+  .td-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;}
   .td-empty{padding:24px;text-align:center;color:var(--text-3);font-size:13px;}
 
   /* ===== KANBAN ===== */
@@ -554,7 +555,7 @@ function renderToday(){
   const ball=S.user!=='all'?all.filter(x=>x.ballOwner===S.user&&!usedIds.has(x.id)).sort((a,b)=>(b.stars||0)-(a.stars||0)||(b.hearts||0)-(a.hearts||0)):[];
   const sec=(title,icon,items)=>{
     if(!items.length)return'';
-    return`<div class="td-sec"><div class="td-sec-h">${icon} ${title}<span class="td-cnt">${items.length}</span></div>${items.map(x=>sH(x)).join('')}</div>`;
+    return`<div class="td-sec"><div class="td-sec-h">${icon} ${title}<span class="td-cnt">${items.length}</span></div><div class="td-grid">${items.map(x=>sH(x)).join('')}</div></div>`;
   };
   // Routines for today's day of week
   const todayDow=TODAY.getDay();
@@ -562,7 +563,7 @@ function renderToday(){
   const doneIds=getRoutineDone();
   const pendingRoutines=todayRoutines.filter(r=>!doneIds.includes(r.id));
   const doneRoutines=todayRoutines.filter(r=>doneIds.includes(r.id));
-  const routineItems=todayRoutines.length?pendingRoutines.map(r=>`<div class="s" style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" style="width:16px;height:16px;cursor:pointer" onclick="event.stopPropagation();toggleRoutineDone('${r.id}')"><div style="flex:1" onclick="openRoutineModal('${r.id}')"><div class="sn">${r.name}</div>${r.project?`<span class="pb pb-${pc(r.project)}">${r.project}</span>`:''}<span style="font-size:10px;color:var(--text-3);margin-left:6px">${r.days.map(d=>DAY_NAMES[d]).join(' ')}</span></div></div>`).join('')+doneRoutines.map(r=>`<div class="s" style="display:flex;align-items:center;gap:8px;opacity:0.4;cursor:pointer"><input type="checkbox" checked style="width:16px;height:16px;cursor:pointer" onclick="event.stopPropagation();toggleRoutineDone('${r.id}')"><div style="flex:1" onclick="openRoutineModal('${r.id}')"><div class="sn" style="text-decoration:line-through">${r.name}</div></div></div>`).join(''):`<div style="color:var(--text-3);font-size:13px;padding:12px 16px">今日のルーティンはありません。<span style="color:var(--accent);cursor:pointer" onclick="document.querySelector('[data-view=routine]').click()">ルーティンタブ</span>から追加できます。</div>`;
+  const routineItems=todayRoutines.length?`<div class="td-grid">`+pendingRoutines.map(r=>`<div class="s s-${r.project?pc(r.project):'df'}" style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" style="width:16px;height:16px;cursor:pointer" onclick="event.stopPropagation();toggleRoutineDone('${r.id}')"><div style="flex:1" onclick="openRoutineModal('${r.id}')"><div class="sn">${r.name}</div>${r.project?`<span class="pb pb-${pc(r.project)}">${r.project}</span>`:''}<span style="font-size:10px;color:var(--text-3);margin-left:6px">${r.days.map(d=>DAY_NAMES[d]).join(' ')}</span></div></div>`).join('')+doneRoutines.map(r=>`<div class="s s-${r.project?pc(r.project):'df'}" style="display:flex;align-items:center;gap:8px;opacity:0.4;cursor:pointer"><input type="checkbox" checked style="width:16px;height:16px;cursor:pointer" onclick="event.stopPropagation();toggleRoutineDone('${r.id}')"><div style="flex:1" onclick="openRoutineModal('${r.id}')"><div class="sn" style="text-decoration:line-through">${r.name}</div></div></div>`).join('')+`</div>`:`<div style="color:var(--text-3);font-size:13px;padding:12px 16px">今日のルーティンはありません。<span style="color:var(--accent);cursor:pointer" onclick="document.querySelector('[data-view=routine]').click()">ルーティンタブ</span>から追加できます。</div>`;
   const routineHtml=`<div class="td-sec"><div class="td-sec-h">🔁 ルーティン${todayRoutines.length?`<span class="td-cnt">${pendingRoutines.length}/${todayRoutines.length}</span>`:''}</div>${routineItems}</div>`;
   const html=sec('期限超過','🔴',overdue)+sec('今日が期限','🟠',due)+sec('作業中（今日が作業期間）','🔵',working)+sec('ボール所在','🟢',ball)+routineHtml;
   document.getElementById('v-today').innerHTML=`<div class="td-v">${html||'<div class="td-empty">今日のタスクはありません</div>'}</div>`;
