@@ -503,6 +503,14 @@ const PROJ_COLORS_KEY='rena-todo-projcolors';
 let projColorMap={};
 function ldProjColors(){const s=localStorage.getItem(PROJ_COLORS_KEY);if(s)projColorMap=JSON.parse(s);}
 function svProjColors(){localStorage.setItem(PROJ_COLORS_KEY,JSON.stringify(projColorMap));}
+async function fetchProjColors(){
+  try{const r=await fetch(API_BASE+'/api/projcolors');if(r.ok){const d=await r.json();if(d&&!d.error){projColorMap=d;svProjColors();render();}}}
+  catch(e){console.warn('projcolors fetch failed',e);}
+}
+async function apiSetProjColor(proj,colorId){
+  try{await fetch(API_BASE+'/api/projcolors',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project:proj,colorId})});}
+  catch(e){console.warn('projcolor save failed',e);}
+}
 function getProjColor(p){
   if(!p)return PROJ_PALETTE[8]; // gray
   if(projColorMap[p]){const c=PROJ_PALETTE.find(x=>x.id===projColorMap[p]);if(c)return c;}
@@ -591,7 +599,8 @@ function openProjModal(){
 function setProjColor(proj,colorId){
   projColorMap[proj]=colorId;
   svProjColors();
-  openProjModal(); // refresh modal
+  apiSetProjColor(proj,colorId);
+  openProjModal();
   render();
 }
 
@@ -1221,7 +1230,7 @@ function render(){
   // Restore ball column scroll positions
   document.querySelectorAll('.bl-c').forEach((c,i)=>{if(ballScrolls[i])c.scrollTop=ballScrolls[i];});
 }
-ld();ldRoutines();loadHash();render();updateHash();fetchSheet();
+ld();ldRoutines();loadHash();render();updateHash();fetchSheet();fetchProjColors();
 </script>
 </body>
 </html>
