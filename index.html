@@ -566,7 +566,7 @@ function sH(t,o={}){
   const cls=td?'td':ov?'od':'';
   const st=(t.stars||0)>0?`<span class="st">${'★'.repeat(t.stars)}</span>`:'';
   const ht=(t.hearts||0)>0?`<span class="ht">${'♡'.repeat(t.hearts)}</span>`:'';
-  const rt=(st||ht)?`<div class="s-r">${st}${ht}</div>`:'';
+  const rt=(!o.noRating&&(st||ht))?`<div class="s-r">${st}${ht}</div>`:'';
   const dr=o.noDrag?'':`draggable="true" ondragstart="onDS(event,'${t.id}')" ondragend="onDE(event)"`;
   const baseSty=`background:${col.bg};border-left:3px solid ${col.main};`;
   const sty=baseSty+(o.style||'');
@@ -667,7 +667,7 @@ function renderToday(){
   const ball=S.user!=='all'?all.filter(x=>x.ballOwner===S.user&&!usedIds.has(x.id)).sort((a,b)=>(b.stars||0)-(a.stars||0)||(b.hearts||0)-(a.hearts||0)):[];
   const sec=(title,icon,items)=>{
     if(!items.length)return'';
-    return`<div class="td-sec"><div class="td-sec-h">${icon} ${title}<span class="td-cnt">${items.length}</span></div><div class="td-cards">${items.map(x=>sH(x)).join('')}</div></div>`;
+    return`<div class="td-sec"><div class="td-sec-h">${icon} ${title}<span class="td-cnt">${items.length}</span></div><div class="td-cards">${items.map(x=>sH(x,{noRating:true})).join('')}</div></div>`;
   };
   // Routines for today's day of week
   const todayDow=TODAY.getDay();
