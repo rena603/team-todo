@@ -81,17 +81,19 @@
   .ds-b:hover{border-color:var(--accent);color:var(--accent);}
   .ds-b.on{background:var(--accent);color:#fff;border-color:var(--accent);}
 
-  /* ===== SUMMARY BAR ===== */
-  .summary{padding:12px 28px;display:flex;gap:16px;border-bottom:1px solid var(--border-light);background:var(--surface);}
-  .stat{display:flex;align-items:center;gap:6px;}
-  .stat-num{font-size:18px;font-weight:800;letter-spacing:-.5px;}
-  .stat-label{font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;line-height:1.2;}
-  .stat-dot{width:6px;height:6px;border-radius:50%;}
-  .progress-bar{height:4px;border-radius:100px;background:var(--surface2);width:120px;overflow:hidden;}
+  /* ===== CONTROLS BAR (summary + filters combined) ===== */
+  .controls-bar{display:flex;align-items:center;gap:16px;padding:8px 28px;border-bottom:1px solid var(--border-light);background:var(--surface);}
+  .summary{display:flex;gap:12px;padding:0;border:none;background:none;}
+  .stat{display:flex;align-items:center;gap:5px;}
+  .stat-num{font-size:15px;font-weight:700;letter-spacing:-.3px;}
+  .stat-label{font-size:9px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;line-height:1.2;}
+  .stat-dot{width:5px;height:5px;border-radius:50%;}
+  .progress-bar{height:3px;border-radius:100px;background:var(--surface2);width:80px;overflow:hidden;}
   .progress-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--green),#34d399);transition:width .6s ease;}
+  .controls-sep{width:1px;height:20px;background:var(--border);flex-shrink:0;}
 
   /* ===== FILTERS ===== */
-  .filters{padding:8px 28px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border-light);}
+  .filters{display:flex;gap:8px;align-items:center;margin-left:auto;padding:0;border:none;}
   .fdrop{position:relative;}
   .fdrop-btn{padding:5px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-2);font-size:11px;font-weight:600;cursor:pointer;transition:all var(--tr);font-family:inherit;display:flex;align-items:center;gap:5px;white-space:nowrap;}
   .fdrop-btn:hover{border-color:var(--accent);color:var(--accent);}
@@ -99,8 +101,8 @@
   .fdrop-btn .fdrop-cnt{font-size:9px;background:var(--accent);color:#fff;border-radius:100px;padding:0 5px;min-width:16px;text-align:center;line-height:16px;}
   .fdrop-btn svg{width:10px;height:10px;transition:transform .15s;}
   .fdrop.open .fdrop-btn svg{transform:rotate(180deg);}
-  .fdrop-menu{display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:180px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-lg);z-index:200;padding:6px 0;max-height:300px;overflow-y:auto;}
-  .fdrop.open .fdrop-menu{display:block;}
+  .fdrop-menu{position:absolute;top:calc(100% + 4px);left:0;min-width:180px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-lg);z-index:200;padding:6px 0;max-height:300px;overflow-y:auto;opacity:0;visibility:hidden;transform:translateY(-4px) scale(.98);transition:opacity .12s ease,transform .12s ease,visibility .12s;}
+  .fdrop.open .fdrop-menu{opacity:1;visibility:visible;transform:translateY(0) scale(1);}
   .fdrop-item{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--text);transition:background .1s;font-weight:500;}
   .fdrop-item:hover{background:var(--surface2);}
   .fdrop-item input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
@@ -108,6 +110,8 @@
   .fdrop-sep{height:1px;background:var(--border-light);margin:4px 0;}
   .fdrop-action{padding:4px 12px;font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;text-align:center;}
   .fdrop-action:hover{background:var(--accent-bg);}
+  .bar-btn{padding:5px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-2);font-size:11px;font-weight:600;cursor:pointer;transition:all var(--tr);font-family:inherit;display:flex;align-items:center;gap:4px;white-space:nowrap;}
+  .bar-btn:hover{border-color:var(--accent);color:var(--accent);}
   .fc{padding:4px 12px;border:1px solid transparent;border-radius:100px;background:none;color:var(--text-3);font-size:11px;font-weight:500;cursor:pointer;transition:all var(--tr);font-family:inherit;}
   .fc:hover{background:var(--surface2);color:var(--text-2);}
   .fc.on{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);font-weight:600;}
@@ -120,11 +124,11 @@
 
   /* ===== STICKY ===== */
   .s{padding:11px 13px;border-radius:var(--r);cursor:pointer;transition:all var(--tr);box-shadow:var(--sh-xs);position:relative;border:1px solid rgba(0,0,0,.04);}
-  .s:hover{box-shadow:var(--sh-md);transform:translateY(-2px);}
-  .s.td{box-shadow:inset 0 0 0 1.5px var(--orange),var(--sh-xs);}
-  .s.od{box-shadow:inset 0 0 0 1.5px var(--red),var(--sh-xs);}
-  .s-t{font-size:12px;font-weight:600;line-height:1.4;margin-bottom:5px;color:var(--text);}
-  .s-m{font-size:10px;color:var(--text-3);display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+  .s:hover{box-shadow:var(--sh-md);transform:scale(1.02);}
+  .s.td{border-right:3px solid var(--orange);}
+  .s.od{border-right:3px solid var(--red);}
+  .s-t{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:5px;color:var(--text);}
+  .s-m{font-size:11px;color:var(--text-3);display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
   .s-r{font-size:10px;margin-bottom:4px;letter-spacing:1px;display:flex;gap:4px;}
   .s-r .st{color:var(--yellow);}
   .s-r .ht{color:var(--pink);}
@@ -134,7 +138,7 @@
 
   /* Project colors — applied dynamically via inline styles now */
   .s-df{background:#f0f1f4;border-left:3px solid #9da3ae;}
-  .pb{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;display:inline-block;letter-spacing:.3px;text-transform:uppercase;}
+  .pb{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-block;letter-spacing:.3px;text-transform:uppercase;}
   .pb-df{background:var(--surface3);color:var(--text-2);}
 
   /* ===== PROJECT MODAL ===== */
@@ -203,9 +207,9 @@
   .mx .s:hover{box-shadow:2px 4px 12px rgba(0,0,0,.15);transform:translate(-50%,-50%) rotate(-1deg);z-index:3;}
   .mx .s:active{cursor:grabbing;}
   .mx .s.mx-dragging{z-index:50;box-shadow:4px 8px 20px rgba(0,0,0,.2);scale:1.08;opacity:.92;}
-  .mx .s .s-t{font-size:10px;font-weight:600;line-height:1.3;margin-bottom:auto;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-all;}
+  .mx .s .s-t{font-size:11px;font-weight:600;line-height:1.3;margin-bottom:auto;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-all;}
   .mx .s .s-r{font-size:9px;margin-bottom:2px;margin-top:2px;}
-  .mx .s .s-m{font-size:8px;gap:3px;margin-top:auto;}
+  .mx .s .s-m{font-size:9px;gap:3px;margin-top:auto;}
   .mx .s .pb{font-size:7px;padding:1px 3px;}
   .mx .s .av{width:16px;height:16px;font-size:6px;margin-left:-4px;}
   .mx .s .av:first-child{margin-left:0;}
@@ -303,7 +307,7 @@
     .hdr{height:auto;padding:10px 16px;flex-wrap:wrap;}
     .summary,.filters{padding-left:16px;padding-right:16px;}
     .td-v,.kb,.bl-v,.mx-w,.ls-w,.tl-w{padding-left:16px;padding-right:16px;}
-    .banner{margin-left:16px;margin-right:16px;}
+    .controls-bar{padding-left:16px;padding-right:16px;flex-wrap:wrap;}
     .hdr-r{width:100%;justify-content:space-between;}
     .hdr-sep{display:none;}
     .mx-qcards .s{width:100%;}
@@ -336,8 +340,11 @@
   </div>
 </div>
 
-<div class="summary" id="summary"></div>
-<div class="filters" id="filters"></div>
+<div class="controls-bar">
+  <div class="summary" id="summary"></div>
+  <div class="controls-sep"></div>
+  <div class="filters" id="filters"></div>
+</div>
 
 <div class="vw on" id="v-today"></div>
 <div class="vw" id="v-kanban"></div>
@@ -604,7 +611,7 @@ function renderFilters(){
     `<div class="fdrop-action" onclick="S.sFilters=[];render();">すべて表示</div><div class="fdrop-sep"></div>`+
     stOpts.map(o=>{const ck=S.sFilters.includes(o.k)?'checked':'';return`<label class="fdrop-item" onclick="event.stopPropagation()"><input type="checkbox" ${ck} onchange="toggleFilter('sFilters','${o.k}')"><span class="fdrop-dot" style="background:${o.c}"></span>${o.l}</label>`;}).join('')+
     `</div></div>`+
-    `<button class="fdrop-btn" style="margin-left:auto;font-size:11px;gap:4px" onclick="openProjModal()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="12" r="1.5" fill="currentColor"/><circle cx="16" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>配色</button>`;
+    `<button class="bar-btn" onclick="openProjModal()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="12" r="1.5" fill="currentColor"/><circle cx="16" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>配色</button>`;
 }
 function toggleDrop(id){
   const el=document.getElementById(id);
