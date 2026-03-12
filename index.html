@@ -431,7 +431,7 @@ const DARK_TEXT_USERS=['rena','Tatsuya Eguchi'];
 function userColor(name){return USER_COLORS[name]||FALLBACK_COLORS[Math.abs([...name].reduce((h,c)=>h*31+c.charCodeAt(0),0))%FALLBACK_COLORS.length];}
 function userTextColor(name){return DARK_TEXT_USERS.includes(name)?'#1a1d23':'#fff';}
 
-let S={view:'today',ds:'work',filter:'all',user:'all',work:[],app:[],editId:null,mS:0,mH:0,routines:[]};
+let S={view:'today',ds:'work',filter:'all',sFilter:'active',user:'all',work:[],app:[],editId:null,mS:0,mH:0,routines:[]};
 const RKEY='rena-todo-routines';
 const DAY_NAMES=['日','月','火','水','木','金','土'];
 function ldRoutines(){const s=localStorage.getItem(RKEY);if(s)S.routines=JSON.parse(s);}
@@ -523,6 +523,7 @@ function pbStyle(p){const c=getProjColor(p);return`background:${c.pbBg};color:${
 function pbH(p){return`<span class="pb" style="${pbStyle(p)}">${p}</span>`;}
 ldProjColors();
 function sk(s){return s==='progress'?'progress':s==='waiting'?'waiting':s==='done'?'done':'todo';}
+function sfMatch(t){const f=S.sFilter;if(f==='all')return true;if(f==='active')return sk(t.status)!=='done';return sk(t.status)===f;}
 function dl(d){if(!d)return'';const t=new Date(d);return`${t.getMonth()+1}/${t.getDate()}`;}
 function isT(d){return d&&new Date(d).toDateString()===TODAY.toDateString();}
 function isO(d){return d&&new Date(d)<TODAY&&!isT(d);}
@@ -575,10 +576,14 @@ function renderSum(){
 
 function renderFilters(){
   const t=ts(),ps=[...new Set(t.map(x=>x.project))];
+  const sfOpts=[{k:'active',l:'未完了'},{k:'all',l:'すべて'},{k:'todo',l:'未着手'},{k:'progress',l:'進行中'},{k:'waiting',l:'確認中'},{k:'done',l:'完了'}];
   document.getElementById('filters').innerHTML=`<button class="fc ${S.filter==='all'?'on':''}" data-p="all">すべて</button>`+
     ps.map(p=>{const col=getProjColor(p);return`<button class="fc ${S.filter===p?'on':''}" data-p="${p}" style="border-left:3px solid ${col.main}">${p}</button>`;}).join('')+
+    `<span style="width:1px;height:20px;background:var(--border);margin:0 4px"></span>`+
+    sfOpts.map(o=>`<button class="fc ${S.sFilter===o.k?'on':''}" data-sf="${o.k}">${o.l}</button>`).join('')+
     `<button class="fc" style="margin-left:auto;font-size:13px" onclick="openProjModal()">🎨</button>`;
   document.getElementById('filters').querySelectorAll('.fc[data-p]').forEach(b=>{b.onclick=()=>{S.filter=b.dataset.p;render();}});
+  document.getElementById('filters').querySelectorAll('.fc[data-sf]').forEach(b=>{b.onclick=()=>{S.sFilter=b.dataset.sf;render();}});
 }
 
 function openProjModal(){
@@ -616,7 +621,7 @@ function renderBanner(){
 
 // TODAY
 function renderToday(){
-  const all=ts().filter(x=>sk(x.status)!=='done'&&(S.filter==='all'||x.project===S.filter)&&(S.user==='all'||!x.ballOwner||x.ballOwner===S.user));
+  const all=ts().filter(x=>sfMatch(x)&&(S.filter==='all'||x.project===S.filter)&&(S.user==='all'||!x.ballOwner||x.ballOwner===S.user));
   const todayStr=TODAY.toDateString();
   const inRange=t=>{
     if(!t.dateStart&&!t.dateEnd)return false;
@@ -647,7 +652,7 @@ function renderToday(){
 
 // KANBAN
 function renderKanban(){
-  const t=ts().filter(x=>S.filter==='all'||x.project===S.filter);
+  const t=ts().filter(x=>(S.filter==='all'||x.project===S.filter)&&sfMatch(x));
   const cols=[{k:'todo',l:'未着手',d:'todo'},{k:'progress',l:'進行中',d:'progress'},{k:'waiting',l:'先方確認中',d:'waiting'},{k:'done',l:'完了',d:'done'}];
   document.getElementById('v-kanban').innerHTML=`<div class="kb">${cols.map(c=>{
     const ct=t.filter(x=>sk(x.status)===c.k).sort((a,b)=>new Date(a.date||'2099')-new Date(b.date||'2099'));
@@ -691,7 +696,7 @@ function initBallColDrag(){
 // MATRIX — Miro-style free canvas with 3x3 grid overlay
 if(!S.matrixPos)S.matrixPos={};
 function renderMatrix(){
-  const t=ts().filter(x=>(S.filter==='all'||x.project===S.filter)&&sk(x.status)!=='done');
+  const t=ts().filter(x=>(S.filter==='all'||x.project===S.filter)&&sfMatch(x));
   // Place unpositioned cards in their rating zone with grid spread
   const unpos=[];
   t.forEach(x=>{if(!S.matrixPos[x.id])unpos.push(x);});
@@ -834,7 +839,7 @@ function initMatrixDrag(){
 // BALL
 function renderBall(){
   const all=ts();
-  const t=all.filter(x=>(S.filter==='all'||x.project===S.filter)&&sk(x.status)!=='done');
+  const t=all.filter(x=>(S.filter==='all'||x.project===S.filter)&&sfMatch(x));
   // Collect all known people from assignees + ballOwners across all tasks in dataset
   const ppl=new Set();
   all.forEach(x=>{
@@ -858,7 +863,7 @@ function renderBall(){
 
 // LIST
 function renderList(){
-  const t=ts().filter(x=>S.filter==='all'||x.project===S.filter).sort((a,b)=>new Date(a.date||'2099')-new Date(b.date||'2099'));
+  const t=ts().filter(x=>(S.filter==='all'||x.project===S.filter)&&sfMatch(x)).sort((a,b)=>new Date(a.date||'2099')-new Date(b.date||'2099'));
   document.getElementById('v-list').innerHTML=`<div class="ls-w"><table class="lt">
     <thead><tr><th>ステータス</th><th>プロジェクト</th><th>タスク</th><th>★</th><th>♡</th><th>期日</th><th>ボール</th><th>担当</th><th>メモ</th></tr></thead>
     <tbody>${t.map(x=>{const ov=isO(x.date),td=isT(x.date);
@@ -877,7 +882,7 @@ function renderList(){
 
 // TIMELINE — work dates, draggable & resizable bars (Notion-style)
 function renderTimeline(){
-  const t=ts().filter(x=>S.filter==='all'||x.project===S.filter).sort((a,b)=>{const pa=(a.project||'').localeCompare(b.project||'');return pa!==0?-pa:new Date(a.dateStart||a.date||'2099')-new Date(b.dateStart||b.date||'2099');});
+  const t=ts().filter(x=>(S.filter==='all'||x.project===S.filter)&&sfMatch(x)).sort((a,b)=>{const pa=(a.project||'').localeCompare(b.project||'');return pa!==0?-pa:new Date(a.dateStart||a.date||'2099')-new Date(b.dateStart||b.date||'2099');});
   // Auto-calculate timeline range: 1 month before earliest date to 2 months after latest date
   const dates=t.flatMap(x=>[x.dateStart,x.dateEnd,x.date].filter(Boolean)).map(d=>new Date(d));
   dates.push(TODAY);
