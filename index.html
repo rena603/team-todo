@@ -604,7 +604,7 @@ function renderFilters(){
     `<div class="fdrop-action" onclick="S.sFilters=[];render();">すべて表示</div><div class="fdrop-sep"></div>`+
     stOpts.map(o=>{const ck=S.sFilters.includes(o.k)?'checked':'';return`<label class="fdrop-item" onclick="event.stopPropagation()"><input type="checkbox" ${ck} onchange="toggleFilter('sFilters','${o.k}')"><span class="fdrop-dot" style="background:${o.c}"></span>${o.l}</label>`;}).join('')+
     `</div></div>`+
-    `<button class="fc" style="margin-left:auto;font-size:13px" onclick="openProjModal()">🎨</button>`;
+    `<button class="fdrop-btn" style="margin-left:auto;font-size:11px;gap:4px" onclick="openProjModal()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="12" r="1.5" fill="currentColor"/><circle cx="16" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>配色</button>`;
 }
 function toggleDrop(id){
   const el=document.getElementById(id);
