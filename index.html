@@ -112,11 +112,6 @@
   .fc:hover{background:var(--surface2);color:var(--text-2);}
   .fc.on{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);font-weight:600;}
 
-  /* ===== BANNER ===== */
-  .banner{margin:14px 28px 0;padding:12px 16px;background:linear-gradient(135deg,#fef2f2,#fff1f2);border:1px solid #fecaca;border-radius:var(--r-lg);display:flex;align-items:flex-start;gap:10px;}
-  .banner-icon{width:28px;height:28px;border-radius:8px;background:#fee2e2;color:var(--red);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;font-weight:700;}
-  .banner h3{font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
-  .banner .tn{font-size:12px;font-weight:500;margin-bottom:2px;display:flex;align-items:center;gap:6px;}
 
   /* ===== VIEWS ===== */
   .vw{display:none;animation:vIn .25s ease;}
@@ -343,7 +338,6 @@
 
 <div class="summary" id="summary"></div>
 <div class="filters" id="filters"></div>
-<div id="todayBanner" style="display:none"></div>
 
 <div class="vw on" id="v-today"></div>
 <div class="vw" id="v-kanban"></div>
@@ -649,16 +643,6 @@ function setProjColor(proj,colorId){
   render();
 }
 
-function renderBanner(){
-  const t=ts().filter(x=>isT(x.date)||isO(x.date)),el=document.getElementById('todayBanner');
-  if(!t.length){el.style.display='none';return;}el.style.display='block';
-  const td=t.filter(x=>isT(x.date)),od=t.filter(x=>isO(x.date));
-  let h=`<div class="banner"><div class="banner-icon">!</div><div><h3>TODAY ${dl(TODAY)}</h3>`;
-  td.forEach(x=>{h+=`<div class="tn">${pbH(x.project)}${x.name}</div>`;});
-  if(od.length)h+=`<div style="margin-top:3px;font-size:11px;color:var(--red);font-weight:600">+ ${od.length}件の期限超過タスク</div>`;
-  h+=`</div></div>`;el.innerHTML=h;
-}
-
 // TODAY
 function renderToday(){
   const all=ts().filter(x=>sfMatch(x)&&pfMatch(x)&&(S.user==='all'||!x.ballOwner||x.ballOwner===S.user));
@@ -870,7 +854,7 @@ function initMatrixDrag(){
       const hH2=rt.hearts>0?'<span class="ht">'+'♡'.repeat(rt.hearts)+'</span>':'';
       if(re)re.innerHTML=sH2+hH2;
       else if(sH2||hH2){const ti=dr.querySelector('.s-t');if(ti)ti.insertAdjacentHTML('afterend','<div class="s-r">'+sH2+hH2+'</div>');}
-      renderKanban();renderBall();renderList();renderTimeline();renderBanner();renderSum();
+      renderKanban();renderBall();renderList();renderTimeline();renderSum();
     }
     dr=null;
   }
@@ -1269,7 +1253,7 @@ function render(){
   // Save ball column scroll positions
   const ballScrolls=[];
   document.querySelectorAll('.bl-c').forEach(c=>ballScrolls.push(c.scrollTop));
-  populateUserSelect();renderSum();renderFilters();renderBanner();renderToday();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();renderRoutine();
+  populateUserSelect();renderSum();renderFilters();renderToday();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();renderRoutine();
   const vw2=document.getElementById(VI[S.view]);
   if(vw2)vw2.scrollLeft=sx;
   // Restore ball column scroll positions
