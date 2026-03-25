@@ -10,7 +10,7 @@ from google.oauth2.service_account import Credentials
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import anthropic
+import difflib
 
 SHEET_ID = '1Vc6qkfGUjTtGBCyCzSKe0kIpX2mr0Qvtf6_u7B4JYZE'
 
@@ -362,19 +362,8 @@ def get_existing_projects():
     return sorted(projects)
 
 
-# Anthropic client (lazy init)
-_ai_client = None
-
-
-def _get_ai_client():
-    global _ai_client
-    if _ai_client is None:
-        _ai_client = anthropic.Anthropic()
-    return _ai_client
-
-
 def normalize_project(raw_name):
-    """案件名をエイリアステーブル + AI判断で正規化する"""
+    """案件名をエイリアステーブル + あいまい一致で正規化する"""
     if not raw_name:
         return raw_name
 
@@ -386,45 +375,18 @@ def normalize_project(raw_name):
             print(f"[normalize] alias hit: '{raw_name}' -> '{result}'")
         return result
 
-    # Step 2: 既存案件リストとAIで判断
+    # Step 2: 既存案件リストとあいまい一致
     existing = get_existing_projects()
     if not existing or raw_name in existing:
         return raw_name
 
-    try:
-        client = _get_ai_client()
-        alias_lines = []
-        for r in get_settings_ws().get_all_values()[1:]:
-            if len(r) >= 2 and r[0].startswith('alias:'):
-                alias_lines.append(f"  {r[0][6:]}: {r[1]}")
-        alias_context = "\n".join(alias_lines) if alias_lines else "(なし)"
+    matches = difflib.get_close_matches(raw_name, existing, n=1, cutoff=0.6)
+    if matches:
+        print(f"[normalize] fuzzy: '{raw_name}' -> '{matches[0]}'")
+        return matches[0]
 
-        resp = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=100,
-            messages=[{
-                "role": "user",
-                "content": (
-                    f"案件名の正規化タスクです。\n"
-                    f"入力された案件名: 「{raw_name}」\n\n"
-                    f"既存の案件名リスト:\n{chr(10).join(f'  - {p}' for p in existing)}\n\n"
-                    f"登録済みエイリアス定義:\n{alias_context}\n\n"
-                    f"入力された案件名が既存案件のどれかと同一だと判断できる場合、"
-                    f"その既存案件名を返してください。"
-                    f"新規案件だと判断した場合は「NEW」とだけ返してください。\n"
-                    f"回答は案件名またはNEWのみ。説明不要。"
-                ),
-            }],
-        )
-        answer = resp.content[0].text.strip()
-        if answer == 'NEW' or answer not in existing:
-            print(f"[normalize] AI: '{raw_name}' -> NEW (answer='{answer}')")
-            return raw_name
-        print(f"[normalize] AI: '{raw_name}' -> '{answer}'")
-        return answer
-    except Exception as e:
-        print(f"[normalize] AI error: {e}, using raw name")
-        return raw_name
+    print(f"[normalize] new project: '{raw_name}'")
+    return raw_name
 
 
 def set_proj_color(project, color_id):
