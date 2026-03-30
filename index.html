@@ -248,6 +248,39 @@
   .lt-sort.on{opacity:1;color:var(--accent);}
   .lt-filter{margin-top:4px;padding:3px 6px;font-size:10px;border:1px solid var(--border-light);border-radius:5px;background:var(--surface);color:var(--text-2);font-family:inherit;cursor:pointer;width:100%;max-width:120px;}
   .lt-filter:focus{border-color:var(--accent);outline:none;}
+  /* List column dropdown menu */
+  .lt-col-wrap{position:relative;display:inline-block;}
+  .lt-col-btn{background:none;border:none;cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:inherit;font-family:inherit;display:inline-flex;align-items:center;gap:4px;padding:0;white-space:nowrap;}
+  .lt-col-btn:hover{color:var(--accent);}
+  .lt-col-badge{font-size:8px;background:var(--accent);color:#fff;border-radius:100px;padding:0 5px;min-width:14px;text-align:center;line-height:14px;flex-shrink:0;}
+  .lt-col-menu{position:absolute;top:calc(100% + 4px);left:0;min-width:180px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-lg);z-index:200;padding:6px 0;max-height:300px;overflow-y:auto;opacity:0;visibility:hidden;transform:translateY(-4px) scale(.98);transition:opacity .12s ease,transform .12s ease,visibility .12s;}
+  .lt-col-menu.open{opacity:1;visibility:visible;transform:translateY(0) scale(1);}
+  .lt-col-menu .fdrop-item{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--text);transition:background .1s;font-weight:500;}
+  .lt-col-menu .fdrop-item:hover{background:var(--surface2);}
+  .lt-col-menu .fdrop-item input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+  .lt-col-menu .fdrop-sep{height:1px;background:var(--border-light);margin:4px 0;}
+  .lt-col-menu .fdrop-action{padding:4px 12px;font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;text-align:center;}
+  .lt-col-menu .fdrop-action:hover{background:var(--accent-bg);}
+  .lt-col-sort{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--text);transition:background .1s;font-weight:500;}
+  .lt-col-sort:hover{background:var(--surface2);}
+  .lt-col-sort.active{color:var(--accent);font-weight:600;}
+  /* Manage view */
+  .manage-wrap{padding:20px 28px;max-width:1400px;}
+  .manage-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+  .manage-card{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-sm);padding:20px;border:1px solid var(--border-light);}
+  .manage-card h4{font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .manage-card h4 .cnt{font-size:10px;color:var(--text-3);font-weight:600;background:var(--surface2);padding:2px 8px;border-radius:100px;}
+  .manage-add-row{display:flex;gap:6px;margin-bottom:12px;}
+  .manage-add-row input,.manage-add-row select{flex:1;padding:7px 10px;font-size:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);font-family:inherit;}
+  .manage-add-row button{padding:6px 14px;font-size:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;font-weight:600;font-family:inherit;white-space:nowrap;}
+  .manage-add-row button:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .manage-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);transition:background var(--tr);border-bottom:1px solid var(--border-light);}
+  .manage-item:hover{background:var(--surface2);}
+  .manage-item .name{flex:1;font-size:13px;font-weight:500;}
+  .manage-item .sub{font-size:11px;color:var(--text-3);}
+  .manage-item .del-btn{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;transition:all var(--tr);}
+  .manage-item .del-btn:hover{color:var(--red);background:var(--red-bg);}
+  @media(max-width:768px){.manage-grid{grid-template-columns:1fr;}}
   .sb{font-size:10px;font-weight:600;padding:3px 10px;border-radius:100px;white-space:nowrap;letter-spacing:.2px;}
   .sb.todo{background:var(--surface2);color:var(--text-2);}
   .sb.progress{background:var(--blue-bg);color:var(--blue-t);}
@@ -500,6 +533,7 @@
     <button class="nav-b on" data-view="timer" data-mode="time">タイマー</button>
     <button class="nav-b" data-view="calendar" data-mode="time">カレンダー</button>
     <button class="nav-b" data-view="report" data-mode="time">レポート</button>
+    <button class="nav-b" data-view="manage" data-mode="time">管理</button>
   </div>
   <div class="hdr-r">
     <div class="ds" id="datasetTabs" style="display:none">
@@ -545,6 +579,7 @@
 <div class="vw" id="v-timer"></div>
 <div class="vw" id="v-calendar"></div>
 <div class="vw" id="v-report"></div>
+<div class="vw" id="v-manage"></div>
 
 <div class="mo" id="modal">
   <div class="md">
@@ -1093,23 +1128,46 @@ function renderBall(){
 // LIST
 // === LIST VIEW: sort & column filter state ===
 let listSort={col:'date',dir:'asc'};
-let listColFilters={status:'',project:'',ballOwner:'',assignee:''};
+let listColFilters={status:[],project:[],ballOwner:[],assignee:[]};
+let listOpenMenu=null; // null or column name
 
-function listToggleSort(col){
-  if(listSort.col===col)listSort.dir=listSort.dir==='asc'?'desc':'asc';
+function listToggleSort(col,dir){
+  if(dir){listSort.col=col;listSort.dir=dir;}
+  else if(listSort.col===col)listSort.dir=listSort.dir==='asc'?'desc':'asc';
   else{listSort.col=col;listSort.dir='asc';}
   render();
 }
-function listSetFilter(col,val){listColFilters[col]=val;render();}
+function listToggleColFilter(col,val){
+  const arr=listColFilters[col];const i=arr.indexOf(val);
+  if(i>=0)arr.splice(i,1);else arr.push(val);
+  render();
+}
+function listClearColFilter(col){listColFilters[col]=[];render();}
+function listSelectAllCol(col,vals){listColFilters[col]=[...vals];render();}
+function listOpenColMenu(col,e){
+  e.stopPropagation();
+  listOpenMenu=listOpenMenu===col?null:col;
+  renderListMenus();
+}
+function renderListMenus(){
+  document.querySelectorAll('.lt-col-menu').forEach(m=>{
+    const col=m.dataset.col;
+    m.classList.toggle('open',listOpenMenu===col);
+  });
+}
+// Close list column menus on outside click
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.lt-col-wrap')&&listOpenMenu!==null){listOpenMenu=null;renderListMenus();}
+});
 
 function renderList(){
   let t=ts().filter(x=>pfMatch(x)&&sfMatch(x));
 
-  // Column filters
-  if(listColFilters.status)t=t.filter(x=>sk(x.status)===listColFilters.status);
-  if(listColFilters.project)t=t.filter(x=>x.project===listColFilters.project);
-  if(listColFilters.ballOwner)t=t.filter(x=>x.ballOwner===listColFilters.ballOwner);
-  if(listColFilters.assignee)t=t.filter(x=>(x.assignees||[]).includes(listColFilters.assignee));
+  // Column filters (multi-select: empty array = no filter)
+  if(listColFilters.status.length)t=t.filter(x=>listColFilters.status.includes(sk(x.status)));
+  if(listColFilters.project.length)t=t.filter(x=>listColFilters.project.includes(x.project));
+  if(listColFilters.ballOwner.length)t=t.filter(x=>listColFilters.ballOwner.includes(x.ballOwner));
+  if(listColFilters.assignee.length)t=t.filter(x=>(x.assignees||[]).some(a=>listColFilters.assignee.includes(a)));
 
   // Sort
   const dir=listSort.dir==='asc'?1:-1;
@@ -1128,33 +1186,54 @@ function renderList(){
 
   // Unique values for filter dropdowns
   const allT=ts().filter(x=>pfMatch(x)&&sfMatch(x));
+  const uStatuses=['todo','progress','waiting','done'];
   const uProjects=[...new Set(allT.map(x=>x.project).filter(Boolean))].sort();
   const uBall=[...new Set(allT.map(x=>x.ballOwner).filter(Boolean))].sort();
   const uAssignees=[...new Set(allT.flatMap(x=>x.assignees||[]))].sort();
 
-  const sortIcon=(col)=>{
-    if(listSort.col!==col)return'<span class="lt-sort">⇅</span>';
-    return listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>';
-  };
-  const filterSel=(col,opts,labelFn)=>{
-    const val=listColFilters[col];
-    return`<select class="lt-filter" onclick="event.stopPropagation()" onchange="listSetFilter('${col}',this.value)">
-      <option value="">全て</option>
-      ${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${labelFn?labelFn(o):o}</option>`).join('')}
-    </select>`;
-  };
+  // Column header with dropdown builder
+  function colHeader(col,label,vals,labelFn){
+    const cnt=listColFilters[col].length;
+    const badge=cnt?`<span class="lt-col-badge">${cnt}</span>`:'';
+    const isAsc=listSort.col===col&&listSort.dir==='asc';
+    const isDesc=listSort.col===col&&listSort.dir==='desc';
+    const sortIndicator=listSort.col===col?(isAsc?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'';
+    let menu=`<div class="lt-col-menu" data-col="${col}">`;
+    menu+=`<div class="lt-col-sort ${isAsc?'active':''}" onclick="event.stopPropagation();listToggleSort('${col}','asc');listOpenMenu=null">↑ 昇順ソート</div>`;
+    menu+=`<div class="lt-col-sort ${isDesc?'active':''}" onclick="event.stopPropagation();listToggleSort('${col}','desc');listOpenMenu=null">↓ 降順ソート</div>`;
+    menu+=`<div class="fdrop-sep"></div>`;
+    if(vals.length){
+      const allSelected=listColFilters[col].length===vals.length;
+      menu+=`<div class="fdrop-action" onclick="event.stopPropagation();${allSelected?`listClearColFilter('${col}')`:`listSelectAllCol('${col}',${JSON.stringify(vals)})`}">${allSelected?'全て解除':'全て選択'}</div>`;
+      menu+=`<div class="fdrop-sep"></div>`;
+      vals.forEach(v=>{
+        const checked=listColFilters[col].includes(v)?'checked':'';
+        const displayLabel=labelFn?labelFn(v):v;
+        menu+=`<label class="fdrop-item" onclick="event.stopPropagation()"><input type="checkbox" ${checked} onchange="listToggleColFilter('${col}','${v.replace(/'/g,"\\'")}')">${displayLabel}</label>`;
+      });
+    }
+    if(cnt){menu+=`<div class="fdrop-sep"></div><div class="fdrop-action" onclick="event.stopPropagation();listClearColFilter('${col}')">フィルター解除</div>`;}
+    menu+=`</div>`;
+    return`<div class="lt-col-wrap"><button class="lt-col-btn" onclick="listOpenColMenu('${col}',event)">${label} ${sortIndicator}${badge}</button>${menu}</div>`;
+  }
+
+  // Simple sortable header (no filter dropdown)
+  function sortHeader(col,label){
+    const sortIndicator=listSort.col===col?(listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'<span class="lt-sort">⇅</span>';
+    return`<span class="lt-sortable" onclick="listToggleSort('${col}')">${label} ${sortIndicator}</span>`;
+  }
 
   document.getElementById('v-list').innerHTML=`<div class="ls-w"><table class="lt">
     <thead>
       <tr>
-        <th onclick="listToggleSort('status')" class="lt-sortable">ステータス ${sortIcon('status')}<br>${filterSel('status',['todo','progress','waiting','done'],k=>SL[k])}</th>
-        <th onclick="listToggleSort('project')" class="lt-sortable">プロジェクト ${sortIcon('project')}<br>${filterSel('project',uProjects)}</th>
-        <th onclick="listToggleSort('name')" class="lt-sortable">タスク ${sortIcon('name')}</th>
-        <th onclick="listToggleSort('stars')" class="lt-sortable">★ ${sortIcon('stars')}</th>
-        <th onclick="listToggleSort('hearts')" class="lt-sortable">♡ ${sortIcon('hearts')}</th>
-        <th onclick="listToggleSort('date')" class="lt-sortable">期日 ${sortIcon('date')}</th>
-        <th onclick="listToggleSort('ballOwner')" class="lt-sortable">ボール ${sortIcon('ballOwner')}<br>${filterSel('ballOwner',uBall,fname)}</th>
-        <th>担当<br>${filterSel('assignee',uAssignees,fname)}</th>
+        <th>${colHeader('status','ステータス',uStatuses,k=>SL[k])}</th>
+        <th>${colHeader('project','プロジェクト',uProjects)}</th>
+        <th class="lt-sortable" onclick="listToggleSort('name')">タスク ${listSort.col==='name'?(listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'<span class="lt-sort">⇅</span>'}</th>
+        <th class="lt-sortable" onclick="listToggleSort('stars')">★ ${listSort.col==='stars'?(listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'<span class="lt-sort">⇅</span>'}</th>
+        <th class="lt-sortable" onclick="listToggleSort('hearts')">♡ ${listSort.col==='hearts'?(listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'<span class="lt-sort">⇅</span>'}</th>
+        <th class="lt-sortable" onclick="listToggleSort('date')">期日 ${listSort.col==='date'?(listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'<span class="lt-sort">⇅</span>'}</th>
+        <th>${colHeader('ballOwner','ボール',uBall,fname)}</th>
+        <th>${colHeader('assignee','担当',uAssignees,fname)}</th>
         <th>メモ</th>
       </tr>
     </thead>
@@ -1174,6 +1253,8 @@ function renderList(){
     </tbody></table>
     <div style="padding:8px 12px;font-size:11px;color:var(--text-3)">${t.length}件表示</div>
   </div>`;
+  // Re-apply open menu state
+  renderListMenus();
 }
 
 // TIMELINE — Notion-style with day-level grid, two-row header, flat bars
@@ -1471,9 +1552,53 @@ function setupR(cid,get,set){
 
 function populateProjectSelect(currentVal){
   const sel=document.getElementById('mProject');
-  const ps=getProjects();
-  sel.innerHTML=ps.map(p=>`<option value="${p}">${p}</option>`).join('')+`<option value="__new__">+ 新規プロジェクト追加</option>`;
-  if(currentVal&&ps.includes(currentVal)){sel.value=currentVal;}
+  const clients=TT.clients||[];
+  const projects=TT.projects||[];
+  const taskProjects=getProjects();
+
+  // Build grouped options if we have client/project data
+  let optionsHtml='';
+  if(clients.length&&projects.length){
+    // Group managed projects by client
+    const grouped={};
+    const usedProjects=new Set();
+    clients.forEach(c=>{
+      const cProjs=projects.filter(p=>p.clientId===c.id);
+      if(cProjs.length){
+        grouped[c.name]=cProjs;
+        cProjs.forEach(p=>usedProjects.add(p.name));
+      }
+    });
+    // Ungrouped managed projects
+    const ungrouped=projects.filter(p=>!p.clientId||!clients.find(c=>c.id===p.clientId));
+    ungrouped.forEach(p=>usedProjects.add(p.name));
+    // Extra projects from tasks not in managed list
+    const extraProjects=taskProjects.filter(p=>!usedProjects.has(p));
+
+    Object.entries(grouped).forEach(([clientName,projs])=>{
+      optionsHtml+=`<optgroup label="${clientName}">`;
+      projs.forEach(p=>{optionsHtml+=`<option value="${p.name}">${p.name}</option>`;});
+      optionsHtml+=`</optgroup>`;
+    });
+    if(ungrouped.length){
+      optionsHtml+=`<optgroup label="未分類">`;
+      ungrouped.forEach(p=>{optionsHtml+=`<option value="${p.name}">${p.name}</option>`;});
+      optionsHtml+=`</optgroup>`;
+    }
+    if(extraProjects.length){
+      optionsHtml+=`<optgroup label="その他">`;
+      extraProjects.forEach(p=>{optionsHtml+=`<option value="${p}">${p}</option>`;});
+      optionsHtml+=`</optgroup>`;
+    }
+  } else {
+    // Fallback: flat list
+    optionsHtml=taskProjects.map(p=>`<option value="${p}">${p}</option>`).join('');
+  }
+  optionsHtml+=`<option value="__new__">+ 新規プロジェクト追加</option>`;
+  sel.innerHTML=optionsHtml;
+
+  const allProjNames=[...new Set([...projects.map(p=>p.name),...taskProjects])];
+  if(currentVal&&allProjNames.includes(currentVal)){sel.value=currentVal;}
   else if(currentVal){
     sel.insertAdjacentHTML('afterbegin',`<option value="${currentVal}">${currentVal}</option>`);
     sel.value=currentVal;
@@ -1685,9 +1810,9 @@ document.addEventListener('click',e=>{
   if(e.target===document.getElementById('routineModal'))closeRoutineModal();
 });
 
-const VI={today:'v-today',kanban:'v-kanban',matrix:'v-matrix',ball:'v-ball',list:'v-list',timeline:'v-timeline',routine:'v-routine',timer:'v-timer',calendar:'v-calendar',report:'v-report'};
+const VI={today:'v-today',kanban:'v-kanban',matrix:'v-matrix',ball:'v-ball',list:'v-list',timeline:'v-timeline',routine:'v-routine',timer:'v-timer',calendar:'v-calendar',report:'v-report',manage:'v-manage'};
 const TASK_VIEWS=['today','kanban','matrix','ball','list','timeline','routine'];
-const TIME_VIEWS=['timer','calendar','report'];
+const TIME_VIEWS=['timer','calendar','report','manage'];
 
 // === MODE SWITCHING (タスク管理 ↔ 工数管理) ===
 function switchMode(mode){
@@ -1797,7 +1922,7 @@ function render(){
   // Save ball column scroll positions
   const ballScrolls=[];
   document.querySelectorAll('.bl-c').forEach(c=>ballScrolls.push(c.scrollTop));
-  populateUserSelect();renderSum();renderFilters();renderToday();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();renderRoutine();renderTimer();renderCalendar();renderReport();
+  populateUserSelect();renderSum();renderFilters();renderToday();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();renderRoutine();renderTimer();renderCalendar();renderReport();renderManage();
   // Restore scroll position, but let timeline handle its own scroll-to-today
   if(S.view!=='timeline'){const vw2=document.getElementById(VI[S.view]);if(vw2)vw2.scrollLeft=sx;}
   else{requestAnimationFrame(()=>tlScrollToToday());}
@@ -1813,7 +1938,8 @@ let TT={
   desc:'',project:'',client:'',billable:true,trackingTaskId:null,
   weekOffset:0,interval:null,
   filterClient:'',filterProject:'',
-  favs:['アプリ制作','既存営業定例','新規営業定例','進捗報告','PJT_工数可視化']
+  favs:['アプリ制作','既存営業定例','新規営業定例','進捗報告','PJT_工数可視化'],
+  clients:[],projects:[]
 };
 function ldTT(){const s=localStorage.getItem(TT_KEY);if(s){const p=JSON.parse(s);Object.assign(TT,p);TT.running=false;TT.interval=null;TT.elapsed=0;}}
 function svTT(){const save={...TT};delete save.interval;localStorage.setItem(TT_KEY,JSON.stringify(save));}
@@ -1940,9 +2066,102 @@ function ttUseFav(name){
   ttStartInternal();
 }
 
-// Unique projects/clients from entries
-function ttProjects(){return[...new Set(TT.entries.map(e=>e.project).filter(Boolean))].sort();}
-function ttClients(){return[...new Set(TT.entries.map(e=>e.client).filter(Boolean))].sort();}
+// Unique projects/clients: prefer TT.clients/TT.projects, fallback to extracted from entries
+function ttProjects(){
+  const managed=(TT.projects||[]).map(p=>p.name);
+  const fromEntries=[...new Set(TT.entries.map(e=>e.project).filter(Boolean))];
+  return[...new Set([...managed,...fromEntries])].sort();
+}
+function ttClients(){
+  const managed=(TT.clients||[]).map(c=>c.name);
+  const fromEntries=[...new Set(TT.entries.map(e=>e.client).filter(Boolean))];
+  return[...new Set([...managed,...fromEntries])].sort();
+}
+function ttInitSeedData(){
+  if(!TT.clients)TT.clients=[];
+  if(!TT.projects)TT.projects=[];
+  if(TT.clients.length===0){
+    const clientNames=[...new Set(TT.entries.map(e=>e.client).filter(Boolean))];
+    clientNames.forEach(c=>{TT.clients.push({id:'c'+Date.now()+Math.random().toString(36).slice(2,6),name:c});});
+  }
+  if(TT.projects.length===0){
+    const projEntries=[...new Set(TT.entries.map(e=>e.project+'|||'+e.client).filter(x=>x!=='|||'))];
+    projEntries.forEach(pe=>{
+      const[proj,client]=pe.split('|||');
+      if(!proj)return;
+      const cl=TT.clients.find(c=>c.name===client);
+      TT.projects.push({id:'p'+Date.now()+Math.random().toString(36).slice(2,6),name:proj,clientId:cl?cl.id:''});
+    });
+  }
+  svTT();
+}
+function ttGetClientName(clientId){const c=(TT.clients||[]).find(x=>x.id===clientId);return c?c.name:'';}
+function ttAddClient(name){
+  if(!name||TT.clients.find(c=>c.name===name))return;
+  TT.clients.push({id:'c'+Date.now(),name});svTT();render();
+}
+function ttDeleteClient(id){
+  TT.clients=TT.clients.filter(c=>c.id!==id);
+  TT.projects=TT.projects.filter(p=>p.clientId!==id);
+  svTT();render();
+}
+function ttAddProject(name,clientId){
+  if(!name)return;
+  TT.projects.push({id:'p'+Date.now(),name,clientId:clientId||''});svTT();render();
+}
+function ttDeleteProject(id){
+  TT.projects=TT.projects.filter(p=>p.id!==id);svTT();render();
+}
+function renderManage(){
+  const el=document.getElementById('v-manage');if(!el)return;
+  ttInitSeedData();
+  const clients=TT.clients||[];
+  const projects=TT.projects||[];
+  const members=[...new Set(TT.entries.map(e=>e.user).filter(Boolean))].sort();
+  const memberRates={};
+  TT.entries.forEach(e=>{if(e.user&&!memberRates[e.user])memberRates[e.user]=e.hourlyRate||2000;});
+
+  let h=`<div class="manage-wrap"><div class="manage-grid">`;
+
+  // 1. Client management
+  h+=`<div class="manage-card"><h4>クライアント管理 <span class="cnt">${clients.length}</span></h4>`;
+  h+=`<div class="manage-add-row"><input type="text" id="manageClientInput" placeholder="クライアント名"><button onclick="ttAddClient(document.getElementById('manageClientInput').value.trim());document.getElementById('manageClientInput').value=''">追加</button></div>`;
+  h+=`<div style="max-height:400px;overflow-y:auto">`;
+  clients.forEach(c=>{
+    const projCnt=projects.filter(p=>p.clientId===c.id).length;
+    h+=`<div class="manage-item"><span class="name">${c.name}</span><span class="sub">${projCnt}件のPJ</span><button class="del-btn" onclick="event.stopPropagation();if(confirm('${c.name}を削除しますか？'))ttDeleteClient('${c.id}')">×</button></div>`;
+  });
+  h+=`</div></div>`;
+
+  // 2. Project management
+  h+=`<div class="manage-card"><h4>プロジェクト管理 <span class="cnt">${projects.length}</span></h4>`;
+  h+=`<div class="manage-add-row"><input type="text" id="manageProjInput" placeholder="プロジェクト名"><select id="manageProjClient"><option value="">クライアント未指定</option>${clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select><button onclick="ttAddProject(document.getElementById('manageProjInput').value.trim(),document.getElementById('manageProjClient').value);document.getElementById('manageProjInput').value=''">追加</button></div>`;
+  h+=`<div style="max-height:400px;overflow-y:auto">`;
+  // Group projects by client
+  const groupedByClient={};
+  projects.forEach(p=>{const cName=ttGetClientName(p.clientId)||'未分類';if(!groupedByClient[cName])groupedByClient[cName]=[];groupedByClient[cName].push(p);});
+  Object.entries(groupedByClient).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cName,projs])=>{
+    h+=`<div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px 4px;border-top:1px solid var(--border-light);margin-top:4px">${cName}</div>`;
+    projs.forEach(p=>{
+      const entryCnt=TT.entries.filter(e=>e.project===p.name).length;
+      h+=`<div class="manage-item" style="padding-left:20px"><span class="name">${p.name}</span><span class="sub">${entryCnt}件</span><button class="del-btn" onclick="event.stopPropagation();if(confirm('${p.name.replace(/'/g,"\\'")}を削除しますか？'))ttDeleteProject('${p.id}')">×</button></div>`;
+    });
+  });
+  h+=`</div></div>`;
+
+  // 3. Member management
+  h+=`<div class="manage-card"><h4>メンバー管理 <span class="cnt">${members.length}</span></h4>`;
+  h+=`<div style="max-height:400px;overflow-y:auto">`;
+  members.forEach(m=>{
+    const rate=memberRates[m]||2000;
+    const totalSec=TT.entries.filter(e=>e.user===m).reduce((s,e)=>s+e.duration,0);
+    h+=`<div class="manage-item"><div class="av" style="background:${userColor(m)};color:${userTextColor(m)};width:28px;height:28px;font-size:10px;flex-shrink:0;border:none">${ini(m)}</div><div style="flex:1"><div class="name">${fname(m)}</div><div class="sub">¥${rate.toLocaleString()}/h</div></div><span class="sub">${ttFmt(totalSec)}</span></div>`;
+  });
+  h+=`</div></div>`;
+
+  h+=`</div></div>`;
+  el.innerHTML=h;
+}
 
 // ===== RENDER TIMER VIEW =====
 function renderTimer(){
