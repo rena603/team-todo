@@ -1138,7 +1138,7 @@ function renderList(){
   };
   const filterSel=(col,opts,labelFn)=>{
     const val=listColFilters[col];
-    return`<select class="lt-filter" onchange="listSetFilter('${col}',this.value)">
+    return`<select class="lt-filter" onclick="event.stopPropagation()" onchange="listSetFilter('${col}',this.value)">
       <option value="">全て</option>
       ${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${labelFn?labelFn(o):o}</option>`).join('')}
     </select>`;
