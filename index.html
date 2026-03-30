@@ -284,16 +284,19 @@
   .tl-bo{font-size:10px;color:var(--text-3);flex-shrink:0;white-space:nowrap;}
   /* Bar area */
   .tl-bw{position:relative;height:36px;flex:1;min-width:0;}
-  .tl-b{position:absolute;top:7px;height:22px;border-radius:4px;display:flex;align-items:center;padding:0 6px;font-size:11px;font-weight:500;white-space:nowrap;min-width:8px;cursor:grab;user-select:none;transition:opacity 80ms;}
-  .tl-b:hover{opacity:0.85;}
-  .tl-b:active{cursor:grabbing;opacity:0.75;}
-  .tl-b.dragging{z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.15);}
-  .tl-label{flex:1;text-align:center;pointer-events:none;overflow:hidden;text-overflow:ellipsis;font-size:11px;}
-  .tl-handle{width:4px;min-width:4px;height:100%;cursor:col-resize;flex-shrink:0;opacity:0;transition:opacity .12s;}
+  .tl-b{position:absolute;top:7px;height:22px;border-radius:5px;display:flex;align-items:center;padding:0 0;font-size:11px;font-weight:500;white-space:nowrap;min-width:8px;cursor:grab;user-select:none;transition:opacity 80ms,box-shadow 120ms,transform 80ms;}
+  .tl-b:hover{opacity:0.9;box-shadow:0 1px 4px rgba(0,0,0,0.1);}
+  .tl-b:active{cursor:grabbing;}
+  .tl-b.dragging{z-index:20;box-shadow:0 4px 16px rgba(0,0,0,0.18);transform:translateY(-1px);opacity:0.92;}
+  .tl-label{flex:1;text-align:center;pointer-events:none;overflow:hidden;text-overflow:ellipsis;font-size:11px;padding:0 4px;}
+  .tl-handle{width:8px;min-width:8px;height:100%;cursor:col-resize;flex-shrink:0;opacity:0;transition:opacity .15s;position:relative;z-index:2;}
   .tl-b:hover .tl-handle{opacity:1;}
-  .tl-handle::after{content:'';display:block;width:2px;height:12px;border-radius:1px;background:rgba(0,0,0,0.25);margin:auto;}
-  .tl-handle-l{border-radius:4px 0 0 4px;}
-  .tl-handle-r{border-radius:0 4px 4px 0;}
+  .tl-handle::after{content:'';display:block;width:3px;height:12px;border-radius:2px;background:rgba(0,0,0,0.3);margin:auto;}
+  .tl-handle-l{border-radius:5px 0 0 5px;}
+  .tl-handle-r{border-radius:0 5px 5px 0;}
+  /* Drag tooltip */
+  .tl-drag-tooltip{position:fixed;padding:4px 10px;border-radius:6px;background:rgba(30,30,40,0.88);color:#fff;font-size:11px;font-weight:600;letter-spacing:.3px;pointer-events:none;z-index:999;white-space:nowrap;backdrop-filter:blur(8px);box-shadow:0 4px 12px rgba(0,0,0,0.2);transform:translate(-50%,-120%);opacity:0;transition:opacity 80ms;}
+  .tl-drag-tooltip.show{opacity:1;}
   /* Status colors — flat, Notion-style */
   .tl-b.sp{background:#D3E5EF;color:#1B4A6B;}
   .tl-b.st{background:#E8E8E8;color:#6B6B6B;}
@@ -357,6 +360,62 @@
   }
   ::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:100px;}::-webkit-scrollbar-thumb:hover{background:var(--text-3);}
   ::selection{background:var(--accent-bg);color:var(--accent);}
+
+  /* ===== TIME TRACKER ===== */
+  .tt-wrap{padding:20px 28px;max-width:1200px;}
+  .tt-timer-box{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-sm);padding:24px;margin-bottom:20px;}
+  .tt-timer-row{display:flex;align-items:center;gap:16px;}
+  .tt-desc{flex:1;font-size:14px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);outline:none;font-family:inherit;}
+  .tt-desc:focus{border-color:var(--accent);}
+  .tt-sel{padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);font-size:12px;font-family:inherit;min-width:120px;}
+  .tt-clock{font-size:36px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums;min-width:140px;text-align:center;color:var(--text);}
+  .tt-start{padding:10px 28px;border:none;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all var(--tr);}
+  .tt-start.go{background:var(--accent);color:#fff;}.tt-start.go:hover{background:var(--accent-h);}
+  .tt-start.stop{background:var(--red);color:#fff;}.tt-start.stop:hover{opacity:.9;}
+  .tt-billable{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);cursor:pointer;}
+  .tt-billable input{accent-color:var(--accent);}
+  .tt-favs{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px;}
+  .tt-fav{padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--text-2);transition:all var(--tr);display:flex;align-items:center;gap:6px;}
+  .tt-fav:hover{border-color:var(--accent);color:var(--accent);}
+  .tt-fav .dot{width:8px;height:8px;border-radius:50%;}
+  .tt-week{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+  .tt-week-nav{padding:6px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;font-size:13px;font-weight:600;}
+  .tt-week-nav:hover{background:var(--accent-bg);color:var(--accent);border-color:var(--accent);}
+  .tt-week-label{font-size:14px;font-weight:600;}
+  .tt-week-total{font-size:13px;color:var(--text-2);margin-left:auto;}
+  .tt-cal{display:grid;grid-template-columns:60px repeat(7,1fr);background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-sm);overflow:hidden;}
+  .tt-cal-hdr{padding:10px 8px;text-align:center;font-size:11px;font-weight:600;color:var(--text-3);border-bottom:2px solid var(--border);}
+  .tt-cal-hdr.today-col{color:var(--accent);border-bottom-color:var(--accent);}
+  .tt-cal-time{padding:4px 8px;font-size:10px;color:var(--text-3);text-align:right;border-right:1px solid var(--border-light);height:48px;display:flex;align-items:flex-start;justify-content:flex-end;}
+  .tt-cal-cell{border-right:1px solid var(--border-light);border-bottom:1px solid var(--border-light);min-height:48px;position:relative;}
+  .tt-entry{position:absolute;left:2px;right:2px;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:default;line-height:1.4;border-left:3px solid;}
+  .tt-entry-dur{font-size:9px;opacity:.7;}
+
+  /* Reports */
+  .tt-rpt{padding:20px 28px;max-width:1200px;}
+  .tt-rpt-summary{display:flex;gap:20px;margin-bottom:24px;}
+  .tt-rpt-card{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-sm);padding:20px 24px;flex:1;}
+  .tt-rpt-card h4{font-size:11px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+  .tt-rpt-card .val{font-size:24px;font-weight:800;letter-spacing:-.5px;}
+  .tt-charts{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;}
+  .tt-chart-box{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-sm);padding:20px 24px;}
+  .tt-chart-box h4{font-size:13px;font-weight:600;margin-bottom:16px;}
+  .tt-bar-chart{display:flex;align-items:flex-end;gap:8px;height:200px;padding-top:20px;}
+  .tt-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .tt-bar{width:100%;border-radius:4px 4px 0 0;transition:height .4s ease;position:relative;}
+  .tt-bar-label{font-size:10px;color:var(--text-3);white-space:nowrap;}
+  .tt-bar-val{font-size:10px;font-weight:600;color:var(--text-2);}
+  .tt-pie-wrap{display:flex;align-items:center;gap:24px;}
+  .tt-pie-legend{display:flex;flex-direction:column;gap:6px;}
+  .tt-pie-item{display:flex;align-items:center;gap:8px;font-size:12px;}
+  .tt-pie-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .tt-pie-pct{color:var(--text-3);font-size:11px;margin-left:auto;min-width:40px;text-align:right;}
+  canvas.tt-pie{width:180px;height:180px;}
+  .tt-breakdown{margin-top:24px;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-sm);overflow:hidden;}
+  .tt-breakdown table{width:100%;border-collapse:collapse;font-size:12px;}
+  .tt-breakdown th{text-align:left;padding:10px 16px;background:var(--surface2);font-weight:600;color:var(--text-2);font-size:11px;}
+  .tt-breakdown td{padding:8px 16px;border-top:1px solid var(--border-light);}
+  .tt-breakdown tr:hover{background:var(--surface-hover);}
 </style>
 </head>
 <body>
@@ -372,6 +431,10 @@
     <button class="nav-b" data-view="list">リスト</button>
     <button class="nav-b" data-view="timeline">タイムライン</button>
     <button class="nav-b" data-view="routine">ルーティン</button>
+    <span style="width:1px;height:16px;background:var(--border);margin:0 2px"></span>
+    <button class="nav-b" data-view="timer">タイマー</button>
+    <button class="nav-b" data-view="calendar">カレンダー</button>
+    <button class="nav-b" data-view="report">レポート</button>
   </div>
   <div class="hdr-r">
     <div class="ds" id="datasetTabs">
@@ -396,6 +459,9 @@
 <div class="vw" id="v-list"></div>
 <div class="vw" id="v-timeline"></div>
 <div class="vw" id="v-routine"></div>
+<div class="vw" id="v-timer"></div>
+<div class="vw" id="v-calendar"></div>
+<div class="vw" id="v-report"></div>
 
 <div class="mo" id="modal">
   <div class="md">
@@ -1112,58 +1178,117 @@ function renderTimeline(){
   // Auto-scroll to today
   requestAnimationFrame(()=>tlScrollToToday());
 
-  // Drag & resize
+  // Drag & resize with scroll support + tooltip + API sync
   const container=document.getElementById('tl-scroll-container');
+  // Floating tooltip element
+  let tooltip=document.querySelector('.tl-drag-tooltip');
+  if(!tooltip){tooltip=document.createElement('div');tooltip.className='tl-drag-tooltip';document.body.appendChild(tooltip);}
+
   document.querySelectorAll('.tl-b[data-tid]').forEach(bar=>{
     const tid=bar.dataset.tid;
-    let mode=null,startX,origL,origW;
+    let mode=null,startX,origL,origW,origScrollL,scrollAnimId=null;
+
     function onDown(e,m){
       e.preventDefault();e.stopPropagation();
-      mode=m;startX=e.clientX||e.touches[0].clientX;
-      origL=parseFloat(bar.style.left);origW=parseFloat(bar.style.width);
+      mode=m;
+      startX=(e.clientX!=null?e.clientX:e.touches[0].clientX);
+      origL=parseFloat(bar.style.left);
+      origW=parseFloat(bar.style.width);
+      origScrollL=container.scrollLeft;
       bar.classList.add('dragging');
+      tooltip.classList.add('show');
+      updateTooltip(e);
       document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
       document.addEventListener('touchmove',onMove,{passive:false});document.addEventListener('touchend',onUp);
     }
+
     bar.querySelector('.tl-handle-l').addEventListener('mousedown',e=>onDown(e,'resizeL'));
     bar.querySelector('.tl-handle-l').addEventListener('touchstart',e=>onDown(e,'resizeL'),{passive:false});
     bar.querySelector('.tl-handle-r').addEventListener('mousedown',e=>onDown(e,'resizeR'));
     bar.querySelector('.tl-handle-r').addEventListener('touchstart',e=>onDown(e,'resizeR'),{passive:false});
-    bar.addEventListener('mousedown',e=>{if(!e.target.classList.contains('tl-handle-l')&&!e.target.classList.contains('tl-handle-r'))onDown(e,'move');});
-    bar.addEventListener('touchstart',e=>{if(!e.target.classList.contains('tl-handle-l')&&!e.target.classList.contains('tl-handle-r'))onDown(e,'move');},{passive:false});
+    bar.addEventListener('mousedown',e=>{
+      if(e.target.closest('.tl-handle'))return;
+      onDown(e,'move');
+    });
+    bar.addEventListener('touchstart',e=>{
+      if(e.target.closest('.tl-handle'))return;
+      onDown(e,'move');
+    },{passive:false});
+
+    function updateTooltip(e){
+      const cx=(e.clientX!=null?e.clientX:e.touches[0].clientX);
+      const cy=(e.clientY!=null?e.clientY:e.touches[0].clientY);
+      const fl=parseFloat(bar.style.left),fw=parseFloat(bar.style.width);
+      const ds=fromPx(fl),de=fromPx(fl+fw-dayCellW/2);
+      tooltip.textContent=dl(fmtD(ds))+' → '+dl(fmtD(de));
+      tooltip.style.left=cx+'px';
+      tooltip.style.top=cy+'px';
+    }
+
+    function autoScroll(cx){
+      // Auto-scroll when dragging near edges
+      if(scrollAnimId){cancelAnimationFrame(scrollAnimId);scrollAnimId=null;}
+      const rect=container.getBoundingClientRect();
+      const edgeZone=60;
+      const leftEdge=rect.left+260+edgeZone; // account for sticky column
+      const rightEdge=rect.right-edgeZone;
+      let speed=0;
+      if(cx<leftEdge)speed=-(leftEdge-cx)*0.4;
+      else if(cx>rightEdge)speed=(cx-rightEdge)*0.4;
+      if(Math.abs(speed)>1){
+        function scroll(){
+          container.scrollLeft+=speed;
+          scrollAnimId=requestAnimationFrame(scroll);
+        }
+        scrollAnimId=requestAnimationFrame(scroll);
+      }
+    }
 
     function onMove(e){
       if(!mode)return;e.preventDefault();
-      const cx=e.clientX||e.touches[0].clientX;
-      const dx=cx-startX;
+      const cx=(e.clientX!=null?e.clientX:e.touches[0].clientX);
+      const scrollDelta=container.scrollLeft-origScrollL;
+      const dx=cx-startX+scrollDelta;
+
       if(mode==='move'){
         bar.style.left=Math.max(0,origL+dx)+'px';
       }else if(mode==='resizeL'){
         const nl=origL+dx;const nw=origW-dx;
         if(nw>=dayCellW){bar.style.left=nl+'px';bar.style.width=nw+'px';}
       }else if(mode==='resizeR'){
-        const nw=Math.max(dayCellW,origW+dx);
-        bar.style.width=nw+'px';
+        bar.style.width=Math.max(dayCellW,origW+dx)+'px';
       }
-      // Snap to grid & update label
+      // Live snap preview on label
       const fl=parseFloat(bar.style.left),fw=parseFloat(bar.style.width);
       const ds=fromPx(fl),de=fromPx(fl+fw-dayCellW/2);
-      bar.querySelector('.tl-label').textContent=dl(fmtD(ds))+' - '+dl(fmtD(de));
+      bar.querySelector('.tl-label').textContent=dl(fmtD(ds))+' → '+dl(fmtD(de));
+      updateTooltip(e);
+      autoScroll(cx);
     }
+
     function onUp(){
       if(!mode)return;
+      if(scrollAnimId){cancelAnimationFrame(scrollAnimId);scrollAnimId=null;}
       bar.classList.remove('dragging');
+      tooltip.classList.remove('show');
       document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);
       document.removeEventListener('touchmove',onMove);document.removeEventListener('touchend',onUp);
       // Snap to day grid
       const fl=parseFloat(bar.style.left),fw=parseFloat(bar.style.width);
       const ds=fromPx(fl),de=fromPx(fl+fw-dayCellW/2);
-      const snappedL=dayIdx(fmtD(ds))*dayCellW;
-      const snappedW=Math.max((dayIdx(fmtD(de))-dayIdx(fmtD(ds))+1)*dayCellW,dayCellW);
+      const newStart=fmtD(ds),newEnd=fmtD(de);
+      const snappedL=dayIdx(newStart)*dayCellW;
+      const snappedW=Math.max((dayIdx(newEnd)-dayIdx(newStart)+1)*dayCellW,dayCellW);
       bar.style.left=snappedL+'px';bar.style.width=snappedW+'px';
       bar.querySelector('.tl-label').textContent=snappedW>60?ft(tid)?.name||'':'';
+      // Save locally + API
       const task=ft(tid);
-      if(task){task.dateStart=fmtD(ds);task.dateEnd=fmtD(de);sv();}
+      if(task){
+        const changed=task.dateStart!==newStart||task.dateEnd!==newEnd;
+        task.dateStart=newStart;task.dateEnd=newEnd;
+        sv();
+        if(changed)apiUpdate(tid,{dateStart:newStart,dateEnd:newEnd});
+      }
       mode=null;
     }
   });
@@ -1387,7 +1512,7 @@ document.addEventListener('click',e=>{
   if(e.target===document.getElementById('routineModal'))closeRoutineModal();
 });
 
-const VI={today:'v-today',kanban:'v-kanban',matrix:'v-matrix',ball:'v-ball',list:'v-list',timeline:'v-timeline',routine:'v-routine'};
+const VI={today:'v-today',kanban:'v-kanban',matrix:'v-matrix',ball:'v-ball',list:'v-list',timeline:'v-timeline',routine:'v-routine',timer:'v-timer',calendar:'v-calendar',report:'v-report'};
 document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(b=>{
   b.onclick=()=>{document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(x=>x.classList.remove('on'));
     b.classList.add('on');S.view=b.dataset.view;Object.entries(VI).forEach(([k,v])=>document.getElementById(v).classList.toggle('on',k===S.view));updateHash();render();
@@ -1438,13 +1563,339 @@ function render(){
   // Save ball column scroll positions
   const ballScrolls=[];
   document.querySelectorAll('.bl-c').forEach(c=>ballScrolls.push(c.scrollTop));
-  populateUserSelect();renderSum();renderFilters();renderToday();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();renderRoutine();
+  populateUserSelect();renderSum();renderFilters();renderToday();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();renderRoutine();renderTimer();renderCalendar();renderReport();
   // Restore scroll position, but let timeline handle its own scroll-to-today
   if(S.view!=='timeline'){const vw2=document.getElementById(VI[S.view]);if(vw2)vw2.scrollLeft=sx;}
   else{requestAnimationFrame(()=>tlScrollToToday());}
   // Restore ball column scroll positions
   document.querySelectorAll('.bl-c').forEach((c,i)=>{if(ballScrolls[i])c.scrollTop=ballScrolls[i];});
 }
+// ===== TIME TRACKER MODULE =====
+// Togglデータが入っているシート (SA-社内PJT) — 後でteam-todoシートに統合可能
+const TT_SHEET_ID='1TUSft9OiHDeftbi3rW9nRPmbjNv3Zz1BH8JysmD-kPE';
+const TT_KEY='rena-tt-v1';
+let TT={
+  entries:[],running:false,startTime:0,elapsed:0,
+  desc:'',project:'',client:'',billable:true,
+  weekOffset:0,interval:null,
+  favs:['アプリ制作','既存営業定例','新規営業定例','進捗報告','PJT_工数可視化']
+};
+function ldTT(){const s=localStorage.getItem(TT_KEY);if(s){const p=JSON.parse(s);Object.assign(TT,p);TT.running=false;TT.interval=null;TT.elapsed=0;}}
+function svTT(){const save={...TT};delete save.interval;localStorage.setItem(TT_KEY,JSON.stringify(save));}
+
+// Fetch time_entries sheet
+async function fetchTimeEntries(){
+  try{
+    const url=`https://docs.google.com/spreadsheets/d/${TT_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=time_entries`;
+    const r=await fetch(url);const text=await r.text();
+    const csv=parseCSV(text);if(csv.length<2)return;
+    const hdr=csv[0];
+    TT.entries=[];
+    for(let i=1;i<csv.length;i++){
+      if(csv[i].length<5)continue;
+      const g=k=>csv[i][hdr.indexOf(k)]||'';
+      const durParts=(g('Duration')||'0:0:0').split(':').map(Number);
+      const secs=(durParts[0]||0)*3600+(durParts[1]||0)*60+(durParts[2]||0);
+      TT.entries.push({
+        user:g('User'),email:g('Email'),client:g('Client'),project:g('Project'),
+        task:g('Task'),desc:g('Description'),billable:g('Billable')==='Yes',
+        startDate:g('Start date'),endDate:g('End date'),duration:secs,
+        tags:g('Tags'),hourlyRate:parseInt(g('Hourly Rate'))||2000
+      });
+    }
+    svTT();
+  }catch(e){console.warn('Time entries fetch failed',e);}
+}
+
+function ttFmt(secs){const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;return`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;}
+function ttHours(secs){return Math.round(secs/36)/100;}
+function ttCost(secs,rate){return Math.round(secs/3600*rate);}
+
+function ttFilteredEntries(){
+  let e=TT.entries;
+  if(S.user!=='all'){
+    const uname=fname(S.user);
+    e=e.filter(x=>x.user===S.user||x.user===uname||fname(x.user)===uname);
+  }
+  return e;
+}
+
+// Get week dates
+function ttWeekDates(){
+  const d=new Date();d.setDate(d.getDate()+TT.weekOffset*7);
+  const day=d.getDay();
+  const mon=new Date(d);mon.setDate(d.getDate()-((day+6)%7));
+  const days=[];
+  for(let i=0;i<7;i++){const dd=new Date(mon);dd.setDate(mon.getDate()+i);days.push(dd);}
+  return days;
+}
+function ttDateStr(d){return d.toISOString().slice(0,10);}
+function ttIsToday(d){const t=new Date();return ttDateStr(d)===ttDateStr(t);}
+
+// Timer controls
+function ttStart(){
+  TT.running=true;TT.startTime=Date.now();TT.elapsed=0;
+  TT.interval=setInterval(()=>{TT.elapsed=Math.floor((Date.now()-TT.startTime)/1000);renderTimerClock();},1000);
+  renderTimer();
+}
+function ttStop(){
+  clearInterval(TT.interval);TT.running=false;
+  if(TT.elapsed>0){
+    const today=ttDateStr(new Date());
+    TT.entries.unshift({user:S.user==='all'?'rena':S.user,email:'',client:TT.client||'StandArrow',project:TT.project||'',task:'',desc:TT.desc||'',billable:TT.billable,startDate:today,endDate:today,duration:TT.elapsed,tags:'',hourlyRate:2000});
+    svTT();
+  }
+  TT.elapsed=0;TT.desc='';renderTimer();
+}
+function renderTimerClock(){const el=document.getElementById('ttClock');if(el)el.textContent=ttFmt(TT.elapsed);}
+
+function ttUseFav(name){TT.desc=name;renderTimer();ttStart();}
+
+// Unique projects/clients from entries
+function ttProjects(){return[...new Set(TT.entries.map(e=>e.project).filter(Boolean))].sort();}
+function ttClients(){return[...new Set(TT.entries.map(e=>e.client).filter(Boolean))].sort();}
+
+// ===== RENDER TIMER VIEW =====
+function renderTimer(){
+  const el=document.getElementById('v-timer');if(!el)return;
+  const projects=ttProjects();
+  const clients=ttClients();
+  const favColors=['#7c3aed','#22c55e','#3b82f6','#ec4899','#f59e0b','#14b8a6','#ef4444','#6366f1'];
+
+  el.innerHTML=`<div class="tt-wrap">
+    <div class="tt-timer-box">
+      <div class="tt-timer-row">
+        <input class="tt-desc" id="ttDesc" placeholder="何をしていますか？" value="${TT.desc||''}" onchange="TT.desc=this.value">
+        <select class="tt-sel" id="ttProject" onchange="TT.project=this.value">
+          <option value="">プロジェクト</option>${projects.map(p=>`<option value="${p}" ${TT.project===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+        <select class="tt-sel" id="ttClient" onchange="TT.client=this.value">
+          <option value="">クライアント</option>${clients.map(c=>`<option value="${c}" ${TT.client===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <label class="tt-billable"><input type="checkbox" ${TT.billable?'checked':''} onchange="TT.billable=this.checked">$</label>
+        <div class="tt-clock" id="ttClock">${ttFmt(TT.elapsed)}</div>
+        ${TT.running
+          ?'<button class="tt-start stop" onclick="ttStop()">STOP</button>'
+          :'<button class="tt-start go" onclick="ttStart()">START</button>'}
+      </div>
+      <div class="tt-favs">
+        ${TT.favs.map((f,i)=>`<div class="tt-fav" onclick="ttUseFav('${f}')"><span class="dot" style="background:${favColors[i%favColors.length]}"></span>${f}</div>`).join('')}
+      </div>
+    </div>
+    ${renderTimerEntries()}
+  </div>`;
+}
+
+function renderTimerEntries(){
+  const entries=ttFilteredEntries().slice(0,50);
+  if(!entries.length)return'<div style="text-align:center;color:var(--text-3);padding:40px">記録がありません</div>';
+  // Group by date
+  const groups={};
+  entries.forEach(e=>{const d=e.startDate||'不明';if(!groups[d])groups[d]=[];groups[d].push(e);});
+  let html='';
+  for(const[date,items]of Object.entries(groups)){
+    const totalSec=items.reduce((s,e)=>s+e.duration,0);
+    html+=`<div style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-light)">
+        <span style="font-weight:600;font-size:13px">${date}</span>
+        <span style="color:var(--text-3);font-size:12px;margin-left:auto">${ttFmt(totalSec)}</span>
+      </div>`;
+    items.forEach(e=>{
+      const pc=projColor(e.project||e.task);
+      html+=`<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-light)">
+        <span style="flex:1;font-size:12px;font-weight:500">${e.desc||e.task||'-'}</span>
+        <span style="font-size:11px;padding:2px 10px;border-radius:12px;background:${pc.bg};color:${pc.pbTx};font-weight:500">${e.project||''}</span>
+        <span style="font-size:11px;color:var(--text-3)">${e.client}</span>
+        <span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;min-width:60px;text-align:right">${ttFmt(e.duration)}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  return html;
+}
+
+// ===== RENDER CALENDAR VIEW =====
+function renderCalendar(){
+  const el=document.getElementById('v-calendar');if(!el)return;
+  const days=ttWeekDates();
+  const entries=ttFilteredEntries();
+  const weekEntries=entries.filter(e=>days.some(d=>ttDateStr(d)===e.startDate));
+  const totalSec=weekEntries.reduce((s,e)=>s+e.duration,0);
+  const weekNum=Math.ceil(((days[3]-new Date(days[3].getFullYear(),0,1))/86400000+1)/7);
+
+  const dayNames=['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const hours=[];for(let h=8;h<=22;h++)hours.push(h);
+
+  // Group entries by day
+  const dayEntries={};
+  days.forEach((d,i)=>{dayEntries[i]=weekEntries.filter(e=>e.startDate===ttDateStr(d));});
+
+  let calHtml=`<div class="tt-cal-hdr" style="border-right:1px solid var(--border-light)"></div>`;
+  days.forEach((d,i)=>{
+    const isT=ttIsToday(d);
+    const daySec=dayEntries[i].reduce((s,e)=>s+e.duration,0);
+    calHtml+=`<div class="tt-cal-hdr ${isT?'today-col':''}">${dayNames[i]}<br><strong style="font-size:20px;${isT?'color:var(--accent)':''}">${d.getDate()}</strong><br><span style="font-size:10px;color:var(--text-3)">${ttFmt(daySec)}</span></div>`;
+  });
+
+  hours.forEach(h=>{
+    calHtml+=`<div class="tt-cal-time">${h}:00</div>`;
+    days.forEach((d,i)=>{
+      // Find entries in this hour (simplified: stack them)
+      const hEntries=dayEntries[i].filter((_,idx)=>{
+        // Distribute entries across hours based on index
+        const totalForDay=dayEntries[i].length;
+        const hourSlot=8+Math.floor(idx/(totalForDay||1)*(hours.length-1));
+        return hourSlot===h;
+      });
+      let cellHtml='';
+      hEntries.forEach(e=>{
+        const pc=projColor(e.project||e.task);
+        const hh=Math.max(Math.round(e.duration/3600*48),20);
+        cellHtml+=`<div class="tt-entry" style="background:${pc.bg};border-color:${pc.main};height:${hh}px;color:${pc.pbTx}" title="${e.desc||e.task} ${ttFmt(e.duration)}">
+          ${e.desc||e.task||'-'}<br><span class="tt-entry-dur">${ttFmt(e.duration)}</span>
+        </div>`;
+      });
+      calHtml+=`<div class="tt-cal-cell">${cellHtml}</div>`;
+    });
+  });
+
+  el.innerHTML=`<div class="tt-wrap">
+    <div class="tt-week">
+      <button class="tt-week-nav" onclick="TT.weekOffset--;render()">&#8249;</button>
+      <button class="tt-week-nav" onclick="TT.weekOffset++;render()">&#8250;</button>
+      <span class="tt-week-label">W${weekNum} · ${days[0].getMonth()+1}/${days[0].getDate()} - ${days[6].getMonth()+1}/${days[6].getDate()}</span>
+      ${TT.weekOffset!==0?`<button class="tt-week-nav" onclick="TT.weekOffset=0;render()" style="font-size:11px">今週</button>`:''}
+      <span class="tt-week-total">WEEK TOTAL <strong>${ttFmt(totalSec)}</strong></span>
+    </div>
+    <div class="tt-cal">${calHtml}</div>
+  </div>`;
+}
+
+// ===== RENDER REPORT VIEW =====
+function renderReport(){
+  const el=document.getElementById('v-report');if(!el)return;
+  const days=ttWeekDates();
+  const entries=ttFilteredEntries();
+  const weekEntries=entries.filter(e=>days.some(d=>ttDateStr(d)===e.startDate));
+
+  const totalSec=weekEntries.reduce((s,e)=>s+e.duration,0);
+  const billSec=weekEntries.filter(e=>e.billable).reduce((s,e)=>s+e.duration,0);
+  const totalCost=weekEntries.reduce((s,e)=>s+ttCost(e.duration,e.hourlyRate),0);
+  const avgDaily=days.filter(d=>weekEntries.some(e=>e.startDate===ttDateStr(d))).length;
+
+  // Duration by day
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayData=days.map(d=>{
+    const de=weekEntries.filter(e=>e.startDate===ttDateStr(d));
+    const bill=de.filter(e=>e.billable).reduce((s,e)=>s+e.duration,0);
+    const nonBill=de.filter(e=>!e.billable).reduce((s,e)=>s+e.duration,0);
+    return{label:`${dayNames[d.getDay()]} ${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`,bill,nonBill,total:bill+nonBill};
+  });
+  const maxH=Math.max(...dayData.map(d=>d.total),3600)/3600;
+
+  // Client distribution
+  const clientMap={};
+  weekEntries.forEach(e=>{const c=e.client||'(なし)';clientMap[c]=(clientMap[c]||0)+e.duration;});
+  const clientData=Object.entries(clientMap).sort((a,b)=>b[1]-a[1]);
+  const pieColors=['#7c3aed','#3b82f6','#22c55e','#ec4899','#f59e0b','#14b8a6','#ef4444','#6366f1','#d946ef','#84cc16'];
+
+  // Breakdown by client + project
+  const breakdown={};
+  weekEntries.forEach(e=>{
+    const key=`${e.client||'(なし)'}|||${e.project||'(なし)'}`;
+    if(!breakdown[key])breakdown[key]={client:e.client||'(なし)',project:e.project||'(なし)',duration:0,cost:0};
+    breakdown[key].duration+=e.duration;
+    breakdown[key].cost+=ttCost(e.duration,e.hourlyRate);
+  });
+  const bdRows=Object.values(breakdown).sort((a,b)=>b.duration-a.duration);
+
+  el.innerHTML=`<div class="tt-rpt">
+    <div class="tt-week" style="margin-bottom:20px">
+      <button class="tt-week-nav" onclick="TT.weekOffset--;render()">&#8249;</button>
+      <button class="tt-week-nav" onclick="TT.weekOffset++;render()">&#8250;</button>
+      <span class="tt-week-label">This week · W${Math.ceil(((days[3]-new Date(days[3].getFullYear(),0,1))/86400000+1)/7)}</span>
+      ${TT.weekOffset!==0?`<button class="tt-week-nav" onclick="TT.weekOffset=0;render()" style="font-size:11px">今週</button>`:''}
+    </div>
+    <div class="tt-rpt-summary">
+      <div class="tt-rpt-card"><h4>Total Hours</h4><div class="val">${ttFmt(totalSec)}</div></div>
+      <div class="tt-rpt-card"><h4>Billable Hours</h4><div class="val">${ttFmt(billSec)} (${totalSec?Math.round(billSec/totalSec*100):0}%)</div></div>
+      <div class="tt-rpt-card"><h4>Amount</h4><div class="val">¥${totalCost.toLocaleString()}</div></div>
+      <div class="tt-rpt-card"><h4>Average Daily</h4><div class="val">${avgDaily?ttFmt(Math.round(totalSec/avgDaily)):'-'}</div></div>
+    </div>
+    <div class="tt-charts">
+      <div class="tt-chart-box">
+        <h4>Duration by day</h4>
+        <div class="tt-bar-chart">
+          ${dayData.map(d=>{
+            const bH=maxH>0?d.bill/3600/maxH*180:0;
+            const nbH=maxH>0?d.nonBill/3600/maxH*180:0;
+            return`<div class="tt-bar-col">
+              <div class="tt-bar-val">${d.total>0?ttFmt(d.total):''}</div>
+              <div style="display:flex;flex-direction:column-reverse;width:100%">
+                <div class="tt-bar" style="height:${bH}px;background:var(--accent)"></div>
+                ${nbH>0?`<div class="tt-bar" style="height:${nbH}px;background:var(--pink);border-radius:4px 4px 0 0"></div>`:''}
+              </div>
+              <div class="tt-bar-label">${d.label.split(' ')[0]}<br>${d.label.split(' ')[1]}</div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div style="display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:11px;color:var(--text-3)">
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--pink);vertical-align:middle;margin-right:4px"></span>Non-billable</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent);vertical-align:middle;margin-right:4px"></span>Billable</span>
+        </div>
+      </div>
+      <div class="tt-chart-box">
+        <h4>Client distribution</h4>
+        <div class="tt-pie-wrap">
+          <canvas class="tt-pie" id="ttPie" width="180" height="180"></canvas>
+          <div class="tt-pie-legend">
+            ${clientData.map(([c,dur],i)=>`<div class="tt-pie-item">
+              <span class="tt-pie-dot" style="background:${pieColors[i%pieColors.length]}"></span>
+              <span>${c}</span>
+              <span class="tt-pie-pct">${totalSec?Math.round(dur/totalSec*100):0}%</span>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tt-breakdown">
+      <table>
+        <thead><tr><th>CLIENT / PROJECT</th><th>DURATION</th><th>DURATION %</th><th>AMOUNT</th></tr></thead>
+        <tbody>
+          ${bdRows.map(r=>`<tr>
+            <td><strong>${r.client}</strong> / ${r.project}</td>
+            <td>${ttFmt(r.duration)}</td>
+            <td>${totalSec?Math.round(r.duration/totalSec*100):0}%</td>
+            <td>¥${r.cost.toLocaleString()}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+
+  // Draw pie chart
+  setTimeout(()=>{
+    const canvas=document.getElementById('ttPie');
+    if(!canvas)return;
+    const ctx=canvas.getContext('2d');
+    const cx=90,cy=90,r=80,ir=50;
+    ctx.clearRect(0,0,180,180);
+    if(!clientData.length){ctx.fillStyle='var(--surface2)';ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();return;}
+    let startAngle=-Math.PI/2;
+    clientData.forEach(([,dur],i)=>{
+      const slice=dur/totalSec*Math.PI*2;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,startAngle,startAngle+slice);ctx.fillStyle=pieColors[i%pieColors.length];ctx.fill();
+      startAngle+=slice;
+    });
+    ctx.beginPath();ctx.arc(cx,cy,ir,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+    ctx.fillStyle='var(--text)';ctx.font='bold 14px Inter';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(ttFmt(totalSec),cx,cy-6);
+    ctx.font='10px Inter';ctx.fillStyle='#9da3ae';ctx.fillText('TOTAL',cx,cy+10);
+  },50);
+}
+
+ldTT();fetchTimeEntries();
+
 ld();ldRoutines();loadHash();render();updateHash();fetchSheet();fetchProjColors();
 // Ensure timeline scrolls to today after initial paint
 if(S.view==='timeline')setTimeout(()=>tlScrollToToday(),100);
