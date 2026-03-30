@@ -764,7 +764,7 @@ async function fetchSheet(){
     for(let i=1;i<csv.length;i++){if(csv[i].length>=2)rows.push(row2task(csv[i],hdr));}
     S.work=rows.filter(t=>t.dataset==='work');
     S.app=rows.filter(t=>t.dataset==='app');
-    sv();render();
+    sv();if(typeof TT!=='undefined')ttSyncClientsFromTasks();render();
     document.getElementById('syncStatus').textContent='synced';
     setTimeout(()=>{document.getElementById('syncStatus').textContent='';},2000);
   }catch(e){console.warn('Sheet fetch failed, using cache',e);}
@@ -830,7 +830,11 @@ function avH(assignees){
   if(!assignees||!assignees.length)return'';
   return`<div class="s-av">${assignees.slice(0,3).map(a=>`<div class="av" style="background:${userColor(a)};color:${userTextColor(a)}" title="${fname(a)}">${ini(a)}</div>`).join('')}</div>`;
 }
-function getProjects(){return[...new Set(allTasks().map(t=>t.project).filter(Boolean))];}
+function getProjects(){
+  const fromTasks=allTasks().map(t=>t.project).filter(Boolean);
+  const fromTTClients=(typeof TT!=='undefined'&&TT.clients||[]).map(c=>c.name);
+  return[...new Set([...fromTTClients,...fromTasks])].sort();
+}
 function getAllPeople(){const p=new Set();allTasks().forEach(t=>{(t.assignees||[]).forEach(a=>p.add(a));if(t.ballOwner&&t.ballOwner.trim())p.add(t.ballOwner.trim());});return[...p].sort();}
 
 function sH(t,o={}){
@@ -869,7 +873,7 @@ function renderSum(){
 }
 
 function renderFilters(){
-  const t=ts(),ps=[...new Set(t.map(x=>x.project))];
+  const t=ts(),ps=getProjects();
   const stOpts=[{k:'todo',l:'未着手',c:'var(--text-3)'},{k:'progress',l:'進行中',c:'var(--blue)'},{k:'waiting',l:'確認中',c:'var(--yellow)'},{k:'done',l:'完了',c:'var(--green)'}];
   const pCnt=S.filters.length;
   const sCnt=S.sFilters.length;
@@ -1231,7 +1235,7 @@ function renderList(){
   // Unique values for filter dropdowns
   const allT=ts().filter(x=>pfMatch(x)&&sfMatch(x));
   const uStatuses=['todo','progress','waiting','done'];
-  const uProjects=[...new Set(allT.map(x=>x.project).filter(Boolean))].sort();
+  const uProjects=getProjects();
   const uBall=[...new Set(allT.map(x=>x.ballOwner).filter(Boolean))].sort();
   const uAssignees=[...new Set(allT.flatMap(x=>x.assignees||[]))].sort();
 
@@ -1598,52 +1602,43 @@ function setupR(cid,get,set){
 
 function populateProjectSelect(currentVal){
   const sel=document.getElementById('mProject');
+  // getProjects() merges TT.clients + task project names as single source of truth
+  const allClientNames=getProjects();
   const clients=TT.clients||[];
   const projects=TT.projects||[];
-  const taskProjects=getProjects();
 
-  // Build grouped options if we have client/project data
+  // Build grouped options: clients that have TT.projects show as optgroups, others as flat options
   let optionsHtml='';
-  if(clients.length&&projects.length){
-    // Group managed projects by client
-    const grouped={};
-    const usedProjects=new Set();
+  if(clients.length){
+    const usedNames=new Set();
     clients.forEach(c=>{
       const cProjs=projects.filter(p=>p.clientId===c.id);
       if(cProjs.length){
-        grouped[c.name]=cProjs;
-        cProjs.forEach(p=>usedProjects.add(p.name));
+        // Client has sub-projects: show as optgroup + also add client itself as selectable option
+        optionsHtml+=`<optgroup label="${c.name}">`;
+        optionsHtml+=`<option value="${c.name}">${c.name}（全般）</option>`;
+        cProjs.forEach(p=>{optionsHtml+=`<option value="${p.name}">${p.name}</option>`;usedNames.add(p.name);});
+        optionsHtml+=`</optgroup>`;
+      } else {
+        // Client with no sub-projects: flat option
+        optionsHtml+=`<option value="${c.name}">${c.name}</option>`;
       }
+      usedNames.add(c.name);
     });
-    // Ungrouped managed projects
-    const ungrouped=projects.filter(p=>!p.clientId||!clients.find(c=>c.id===p.clientId));
-    ungrouped.forEach(p=>usedProjects.add(p.name));
-    // Extra projects from tasks not in managed list
-    const extraProjects=taskProjects.filter(p=>!usedProjects.has(p));
-
-    Object.entries(grouped).forEach(([clientName,projs])=>{
-      optionsHtml+=`<optgroup label="${clientName}">`;
-      projs.forEach(p=>{optionsHtml+=`<option value="${p.name}">${p.name}</option>`;});
-      optionsHtml+=`</optgroup>`;
-    });
-    if(ungrouped.length){
-      optionsHtml+=`<optgroup label="未分類">`;
-      ungrouped.forEach(p=>{optionsHtml+=`<option value="${p.name}">${p.name}</option>`;});
-      optionsHtml+=`</optgroup>`;
-    }
-    if(extraProjects.length){
+    // Extra names from tasks not in managed clients
+    const extras=allClientNames.filter(n=>!usedNames.has(n));
+    if(extras.length){
       optionsHtml+=`<optgroup label="その他">`;
-      extraProjects.forEach(p=>{optionsHtml+=`<option value="${p}">${p}</option>`;});
+      extras.forEach(p=>{optionsHtml+=`<option value="${p}">${p}</option>`;});
       optionsHtml+=`</optgroup>`;
     }
   } else {
-    // Fallback: flat list
-    optionsHtml=taskProjects.map(p=>`<option value="${p}">${p}</option>`).join('');
+    // Fallback: flat list from merged getProjects()
+    optionsHtml=allClientNames.map(p=>`<option value="${p}">${p}</option>`).join('');
   }
   sel.innerHTML=optionsHtml;
 
-  const allProjNames=[...new Set([...projects.map(p=>p.name),...taskProjects])];
-  if(currentVal&&allProjNames.includes(currentVal)){sel.value=currentVal;}
+  if(currentVal&&allClientNames.includes(currentVal)){sel.value=currentVal;}
   else if(currentVal){
     sel.insertAdjacentHTML('afterbegin',`<option value="${currentVal}">${currentVal}</option>`);
     sel.value=currentVal;
@@ -1733,6 +1728,8 @@ document.getElementById('mSave').onclick=function(){
   if(S.editId){const t=ft(S.editId);if(t){Object.assign(t,d);if(S.matrixPos)delete S.matrixPos[t.id];}
     const upd={...d,assignees:(d.assignees||[]).join(','),stars:String(d.stars),hearts:String(d.hearts)};apiUpdate(S.editId,upd);}
   else{d.id='n'+Date.now();d.group=S.ds==='work'?'Work':'App';d.dataset=S.ds;(S.ds==='work'?S.work:S.app).push(d);}
+  // Sync: if project/client name doesn't exist in TT.clients, add it
+  if(proj&&typeof TT!=='undefined'){ttAddClient(proj);}
   sv();closeModal();render();window.scrollTo(0,savedScrollY);
 };
 document.getElementById('mDelete').onclick=function(){
@@ -1829,6 +1826,8 @@ document.addEventListener('click',e=>{
     const editId=document.getElementById('routineModal').dataset.editId;
     if(editId){const r=S.routines.find(x=>x.id===editId);if(r){r.name=nm;r.project=proj;r.days=days;r.assignees=assignees;}}
     else{S.routines.push({id:'r'+Date.now(),name:nm,project:proj,days,assignees});}
+    // Sync: if project/client name doesn't exist in TT.clients, add it
+    if(proj&&typeof TT!=='undefined'){ttAddClient(proj);}
     svRoutines();closeRoutineModal();render();
   }
   if(e.target.id==='rmDelete'){
@@ -2122,8 +2121,23 @@ function ttInitSeedData(){
 }
 function ttGetClientName(clientId){const c=(TT.clients||[]).find(x=>x.id===clientId);return c?c.name:'';}
 function ttAddClient(name){
-  if(!name||TT.clients.find(c=>c.name===name))return;
-  TT.clients.push({id:'c'+Date.now(),name});svTT();render();
+  if(!name)return;
+  if(!TT.clients)TT.clients=[];
+  if(TT.clients.find(c=>c.name===name))return;
+  TT.clients.push({id:'c'+Date.now()+Math.random().toString(36).slice(2,6),name});svTT();render();
+}
+// Sync all task project names into TT.clients (called after sheet fetch, etc.)
+function ttSyncClientsFromTasks(){
+  if(!TT.clients)TT.clients=[];
+  const taskProjects=[...new Set([...S.work,...S.app].map(t=>t.project).filter(Boolean))];
+  let changed=false;
+  taskProjects.forEach(p=>{
+    if(!TT.clients.find(c=>c.name===p)){
+      TT.clients.push({id:'c'+Date.now()+Math.random().toString(36).slice(2,6),name:p});
+      changed=true;
+    }
+  });
+  if(changed)svTT();
 }
 function ttDeleteClient(id){
   TT.clients=TT.clients.filter(c=>c.id!==id);
@@ -2682,7 +2696,7 @@ function renderReport(){
 
 ldTT();fetchTimeEntries();
 
-ld();ldRoutines();loadHash();render();updateHash();fetchSheet();fetchProjColors();
+ld();ldRoutines();ttSyncClientsFromTasks();loadHash();render();updateHash();fetchSheet();fetchProjColors();
 // Ensure timeline scrolls to today after initial paint
 if(S.view==='timeline')setTimeout(()=>tlScrollToToday(),100);
 </script>
