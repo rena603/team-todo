@@ -451,7 +451,7 @@
     <button class="nav-b" data-view="report" data-mode="time">レポート</button>
   </div>
   <div class="hdr-r">
-    <div class="ds" id="datasetTabs">
+    <div class="ds" id="datasetTabs" style="display:none">
       <button class="ds-b on" data-dataset="work">既存案件</button>
       <button class="ds-b" data-dataset="app">アプリPJT</button>
     </div>
@@ -641,7 +641,7 @@ async function fetchSheet(){
 
 function ld(){const s=localStorage.getItem(KEY);if(s){const p=JSON.parse(s);S.work=p.work||[];S.app=p.app||[];}}
 function sv(){localStorage.setItem(KEY,JSON.stringify({work:S.work,app:S.app}));}
-function ts(){const d=S.ds==='work'?S.work:S.app;return S.user==='all'?d:d.filter(t=>(t.assignees||[]).includes(S.user));}
+function ts(){const d=[...S.work,...S.app];return S.user==='all'?d:d.filter(t=>(t.assignees||[]).includes(S.user));}
 function allTasks(){return[...S.work,...S.app];}
 function ft(id){return S.work.find(t=>t.id===id)||S.app.find(t=>t.id===id);}
 function fds(id){return S.work.find(t=>t.id===id)?'work':'app';}
@@ -1555,7 +1555,7 @@ function switchMode(mode){
   const isTime=mode==='time';
   document.getElementById('viewTabs').style.display=isTime?'none':'flex';
   document.getElementById('timeViewTabs').style.display=isTime?'flex':'none';
-  document.getElementById('datasetTabs').style.display=isTime?'none':'flex';
+  document.getElementById('datasetTabs').style.display='none';
   document.getElementById('timeFilters').style.display=isTime?'flex':'none';
   document.getElementById('taskControls').style.display=isTime?'none':'flex';
   document.getElementById('timeControls').style.display=isTime?'flex':'none';
