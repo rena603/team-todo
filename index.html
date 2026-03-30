@@ -671,7 +671,8 @@ const USER_COLORS={
   'Midori Fukihara':'#10b981','Tatsuya Eguchi':'#84cc16',
   'IihoshiSatsuki':'#f97316','MorishimaChihiro':'#4a7fa5','先方':'#8b5cf6',
   'Shun Saito':'#14b8a6','Ami':'#6366f1','Mai':'#d946ef',
-  'Nanarabbit626':'#f472b6','Satoshi Yamashita':'#a78bfa','T19takahashi':'#fb923c'
+  'Nanarabbit626':'#f472b6','Satoshi Yamashita':'#a78bfa','T19takahashi':'#fb923c',
+  '杉本':'#fbbf24'
 };
 const FALLBACK_COLORS=['#8b5cf6','#14b8a6','#6366f1','#d946ef'];
 const DARK_TEXT_USERS=['rena','Tatsuya Eguchi'];
@@ -1624,7 +1625,8 @@ document.getElementById('projAddBtn').onclick=function(){
   document.getElementById('projNewName').value='';
 };
 
-const TEAM=['rena','Ayano Yo','OshinoKanako','Midori Fukihara','Tatsuya Eguchi','Shun Saito','Ami','MorishimaChihiro','IihoshiSatsuki','Mai','Nanarabbit626','Satoshi Yamashita','T19takahashi'];
+const TEAM=['Ami','Ayano Yo','MorishimaChihiro','OshinoKanako','Mai','Midori Fukihara','Nanarabbit626','rena','Satoshi Yamashita','IihoshiSatsuki','Shun Saito','T19takahashi','Tatsuya Eguchi','杉本'];
+const MEMBER_RATES={'Ami':22,'Ayano Yo':22,'MorishimaChihiro':20,'OshinoKanako':22,'Mai':22,'Midori Fukihara':22,'Nanarabbit626':22,'rena':20,'Satoshi Yamashita':20,'IihoshiSatsuki':15,'Shun Saito':20,'T19takahashi':22,'Tatsuya Eguchi':0,'杉本':22};
 function populatePeople(selectedAssignees,selectedBall){
   const wrap=document.getElementById('mAssigneeWrap');
   const members=[...TEAM];
@@ -2154,13 +2156,14 @@ function renderManage(){
   });
   h+=`</div></div>`;
 
-  // 3. Member management — based on TEAM constant
+  // 3. Member management — based on TEAM constant with USD rates from Toggl
   h+=`<div class="manage-card"><h4>メンバー管理 <span class="cnt">${TEAM.length}</span></h4>`;
   h+=`<div style="max-height:400px;overflow-y:auto">`;
   TEAM.forEach(m=>{
-    const rate=2000;
+    const rate=MEMBER_RATES[m]||0;
+    const rateStr=rate>0?`${rate} USD`:'-';
     const totalSec=TT.entries.filter(e=>e.user===m||fname(e.user)===fname(m)).reduce((s,e)=>s+e.duration,0);
-    h+=`<div class="manage-item"><div class="av" style="background:${userColor(m)};color:${userTextColor(m)};width:28px;height:28px;font-size:10px;flex-shrink:0;border:none">${ini(m)}</div><div style="flex:1"><div class="name">${fname(m)}</div><div class="sub">¥${rate.toLocaleString()}/h</div></div><span class="sub">${ttFmt(totalSec)}</span></div>`;
+    h+=`<div class="manage-item"><div class="av" style="background:${userColor(m)};color:${userTextColor(m)};width:28px;height:28px;font-size:10px;flex-shrink:0;border:none">${ini(m)}</div><div style="flex:1"><div class="name">${fname(m)}</div><div class="sub">${rateStr}</div></div><span class="sub">${ttFmt(totalSec)}</span></div>`;
   });
   h+=`</div></div>`;
 
