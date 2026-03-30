@@ -5,6 +5,7 @@ import json
 import base64
 import threading
 import urllib.request
+from datetime import datetime, timedelta
 import gspread
 from google.oauth2.service_account import Credentials
 from slack_bolt import App
@@ -249,6 +250,21 @@ def handle_mention(event, say):
         )
         return
 
+    # ルーティンタスク生成コマンド
+    clean = re.sub(r'<@[A-Z0-9]+>', '', text).strip().lower()
+    if clean in ('routine', 'routines', 'ルーティン'):
+        try:
+            count = generate_routines()
+            if count > 0:
+                say(text=f":arrows_counterclockwise: ルーティンタスクを {count} 件追加しました（{_monday_of_week()} 週）",
+                    thread_ts=event.get('ts'))
+            else:
+                say(text=f":white_check_mark: 今週（{_monday_of_week()}）のルーティンは生成済みです",
+                    thread_ts=event.get('ts'))
+        except Exception as e:
+            say(text=f":x: ルーティン生成エラー: {e}", thread_ts=event.get('ts'))
+        return
+
     task = parse_task(text)
 
     if not task['name']:
@@ -389,6 +405,106 @@ def normalize_project(raw_name):
     return raw_name
 
 
+def get_routines_ws():
+    """routinesシートを取得（なければ作成）"""
+    try:
+        return sh.worksheet('routines')
+    except gspread.exceptions.WorksheetNotFound:
+        rws = sh.add_worksheet(title='routines', rows=100, cols=10)
+        headers = ['name', 'project', 'assignees', 'ballOwner',
+                   'stars', 'hearts', 'frequency', 'group', 'dataset', 'notes']
+        rws.append_row(headers)
+        return rws
+
+
+def _monday_of_week(dt=None):
+    """指定日の週の月曜日をYYYY-MM-DD文字列で返す"""
+    if dt is None:
+        dt = datetime.now()
+    monday = dt - timedelta(days=dt.weekday())
+    return monday.strftime('%Y-%m-%d')
+
+
+def generate_routines(force=False):
+    """routinesシートからタスクを生成する。同じ週に既に生成済みならスキップ。"""
+    rws = get_routines_ws()
+    routines = rws.get_all_records()
+    if not routines:
+        print("[routines] no routines defined")
+        return 0
+
+    week_key = _monday_of_week()
+
+    # 既に今週生成済みか確認（notesに週キーを埋め込む）
+    marker = f'routine:{week_key}'
+    existing_notes = [r[COL_MAP['notes'] - 1] for r in ws.get_all_values()[1:]
+                      if len(r) >= COL_MAP['notes']]
+    if not force and marker in existing_notes:
+        print(f"[routines] already generated for week {week_key}")
+        return 0
+
+    count = 0
+    for r in routines:
+        freq = r.get('frequency', 'weekly').strip().lower()
+        now = datetime.now()
+
+        # frequency判定
+        if freq == 'monthly' and now.day > 7:
+            continue  # 月初の週のみ生成
+        elif freq == 'biweekly':
+            week_num = now.isocalendar()[1]
+            if week_num % 2 != 0:
+                continue  # 偶数週のみ
+
+        dataset = r.get('dataset', 'work').strip() or 'work'
+        tid = next_id(dataset)
+        group = r.get('group', '既存案件').strip() or '既存案件'
+
+        row = [
+            tid,
+            r.get('name', ''),
+            r.get('project', ''),
+            'todo',
+            '',  # date
+            '',  # dateStart
+            '',  # dateEnd
+            r.get('assignees', ''),
+            str(r.get('stars', 0)),
+            str(r.get('hearts', 0)),
+            r.get('ballOwner', ''),
+            marker,  # notesにマーカーを埋め込み
+            group,
+            dataset,
+        ]
+        ws.append_row(row)
+        count += 1
+        print(f"[routines] added: {r.get('name')} ({tid})")
+
+    print(f"[routines] generated {count} tasks for week {week_key}")
+    return count
+
+
+def start_routine_scheduler():
+    """毎週月曜 09:00 JST にルーティンタスクを自動生成するスケジューラ"""
+    def _run():
+        while True:
+            now = datetime.now()
+            # 次の月曜 09:00 を計算
+            days_until_monday = (7 - now.weekday()) % 7
+            if days_until_monday == 0 and now.hour >= 9:
+                days_until_monday = 7
+            next_monday = now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=days_until_monday)
+            wait_seconds = (next_monday - now).total_seconds()
+            print(f"[routine_scheduler] next run: {next_monday} (in {wait_seconds:.0f}s)")
+            threading.Event().wait(wait_seconds)
+            try:
+                generate_routines()
+            except Exception as e:
+                print(f"[routine_scheduler] ERROR: {e}")
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
 def set_proj_color(project, color_id):
     sws = get_settings_ws()
     rows = sws.get_all_values()
@@ -482,6 +598,14 @@ class HealthHandler(BaseHTTPRequestHandler):
                 'cache_rebuild_error': cache_error,
                 'slack_api_test': slack_test,
             })
+            return
+        if self.path == '/api/routines':
+            try:
+                force = 'force' in (self.path + '?' + (self.headers.get('X-Force', '') or ''))
+                count = generate_routines(force=force)
+                self._json(200, {'ok': True, 'generated': count, 'week': _monday_of_week()})
+            except Exception as e:
+                self._json(500, {'error': str(e)})
             return
         self.send_response(200)
         self.end_headers()
@@ -598,6 +722,7 @@ def keep_alive():
 if __name__ == '__main__':
     threading.Thread(target=start_health_server, daemon=True).start()
     threading.Thread(target=keep_alive, daemon=True).start()
+    start_routine_scheduler()
     build_slack_id_cache()
     _build_channel_cache()
     handler = SocketModeHandler(app, os.environ['SLACK_APP_TOKEN'])
