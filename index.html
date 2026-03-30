@@ -361,6 +361,14 @@
   ::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:100px;}::-webkit-scrollbar-thumb:hover{background:var(--text-3);}
   ::selection{background:var(--accent-bg);color:var(--accent);}
 
+  /* ===== MODE TABS ===== */
+  .mode-tabs{display:flex;gap:2px;}
+  .mode-b{padding:5px 16px;border:none;background:none;color:var(--text-3);font-size:13px;font-weight:700;border-radius:7px;cursor:pointer;transition:all var(--tr);font-family:inherit;letter-spacing:-.2px;}
+  .mode-b:hover{color:var(--text-2);}
+  .mode-b.on{color:var(--accent);background:var(--accent-bg);}
+  .tt-filter-sel{padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);font-size:11px;font-weight:600;font-family:inherit;color:var(--text-2);cursor:pointer;}
+  .tt-filter-sel:hover{border-color:var(--accent);}
+
   /* ===== TIME TRACKER ===== */
   .tt-wrap{padding:20px 28px;max-width:1200px;}
   .tt-timer-box{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-sm);padding:24px;margin-bottom:20px;}
@@ -421,35 +429,59 @@
 <body>
 
 <div class="hdr">
-  <select id="userSelect" class="user-sel"></select><span class="user-label">TODO</span>
+  <select id="userSelect" class="user-sel"></select>
+  <div class="hdr-sep"></div>
+  <div class="mode-tabs" id="modeTabs">
+    <button class="mode-b on" data-mode="task">タスク管理</button>
+    <button class="mode-b" data-mode="time">工数管理</button>
+  </div>
   <div class="hdr-sep"></div>
   <div class="nav" id="viewTabs">
-    <button class="nav-b on" data-view="today">今日</button>
-    <button class="nav-b" data-view="kanban">ボード</button>
-    <button class="nav-b" data-view="matrix">マトリクス</button>
-    <button class="nav-b" data-view="ball">ボール所在</button>
-    <button class="nav-b" data-view="list">リスト</button>
-    <button class="nav-b" data-view="timeline">タイムライン</button>
-    <button class="nav-b" data-view="routine">ルーティン</button>
-    <span style="width:1px;height:16px;background:var(--border);margin:0 2px"></span>
-    <button class="nav-b" data-view="timer">タイマー</button>
-    <button class="nav-b" data-view="calendar">カレンダー</button>
-    <button class="nav-b" data-view="report">レポート</button>
+    <button class="nav-b on" data-view="today" data-mode="task">今日</button>
+    <button class="nav-b" data-view="kanban" data-mode="task">ボード</button>
+    <button class="nav-b" data-view="matrix" data-mode="task">マトリクス</button>
+    <button class="nav-b" data-view="ball" data-mode="task">ボール所在</button>
+    <button class="nav-b" data-view="list" data-mode="task">リスト</button>
+    <button class="nav-b" data-view="timeline" data-mode="task">タイムライン</button>
+    <button class="nav-b" data-view="routine" data-mode="task">ルーティン</button>
+  </div>
+  <div class="nav" id="timeViewTabs" style="display:none">
+    <button class="nav-b on" data-view="timer" data-mode="time">タイマー</button>
+    <button class="nav-b" data-view="calendar" data-mode="time">カレンダー</button>
+    <button class="nav-b" data-view="report" data-mode="time">レポート</button>
   </div>
   <div class="hdr-r">
     <div class="ds" id="datasetTabs">
       <button class="ds-b on" data-dataset="work">既存案件</button>
       <button class="ds-b" data-dataset="app">アプリPJT</button>
     </div>
+    <div class="ds" id="timeFilters" style="display:none">
+      <select id="ttClientFilter" class="tt-filter-sel" onchange="TT.filterClient=this.value;render()">
+        <option value="">全クライアント</option>
+      </select>
+      <select id="ttProjectFilter" class="tt-filter-sel" onchange="TT.filterProject=this.value;render()">
+        <option value="">全プロジェクト</option>
+      </select>
+    </div>
     <button class="sync-btn" id="syncBtn" title="スプシと同期">&#x21bb;</button>
     <span class="sync-st" id="syncStatus"></span>
   </div>
 </div>
 
-<div class="controls-bar">
+<div class="controls-bar" id="taskControls">
   <div class="summary" id="summary"></div>
   <div class="controls-sep"></div>
   <div class="filters" id="filters"></div>
+</div>
+<div class="controls-bar" id="timeControls" style="display:none">
+  <div id="ttRunning" style="display:flex;align-items:center;gap:12px;flex:1">
+    <span id="ttRunningDot" style="width:8px;height:8px;border-radius:50%;background:var(--text-3)"></span>
+    <input class="tt-desc" id="ttDescGlobal" placeholder="何をしていますか？" style="flex:1;font-size:13px;padding:8px 12px">
+    <select class="tt-filter-sel" id="ttProjectGlobal"><option value="">プロジェクト</option></select>
+    <label class="tt-billable"><input type="checkbox" id="ttBillableGlobal" checked>$</label>
+    <span class="tt-clock" id="ttClockGlobal" style="font-size:22px;font-weight:800;min-width:90px">0:00:00</span>
+    <button class="tt-start go" id="ttStartBtn" onclick="ttToggle()">START</button>
+  </div>
 </div>
 
 <div class="vw on" id="v-today"></div>
@@ -557,7 +589,7 @@ const DARK_TEXT_USERS=['rena','Tatsuya Eguchi'];
 function userColor(name){return USER_COLORS[name]||FALLBACK_COLORS[Math.abs([...name].reduce((h,c)=>h*31+c.charCodeAt(0),0))%FALLBACK_COLORS.length];}
 function userTextColor(name){return DARK_TEXT_USERS.includes(name)?'#1a1d23':'#fff';}
 
-let S={view:'today',ds:'work',filters:[],sFilters:['todo','progress','waiting'],user:'all',work:[],app:[],editId:null,mS:0,mH:0,routines:[]};
+let S={view:'today',ds:'work',mode:'task',filters:[],sFilters:['todo','progress','waiting'],user:'all',work:[],app:[],editId:null,mS:0,mH:0,routines:[]};
 const RKEY='rena-todo-routines';
 const DAY_NAMES=['日','月','火','水','木','金','土'];
 function ldRoutines(){const s=localStorage.getItem(RKEY);if(s)S.routines=JSON.parse(s);}
@@ -1513,48 +1545,109 @@ document.addEventListener('click',e=>{
 });
 
 const VI={today:'v-today',kanban:'v-kanban',matrix:'v-matrix',ball:'v-ball',list:'v-list',timeline:'v-timeline',routine:'v-routine',timer:'v-timer',calendar:'v-calendar',report:'v-report'};
-document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(b=>{
-  b.onclick=()=>{document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');S.view=b.dataset.view;Object.entries(VI).forEach(([k,v])=>document.getElementById(v).classList.toggle('on',k===S.view));updateHash();render();
-    if(S.view==='timeline')requestAnimationFrame(()=>tlScrollToToday());};
+const TASK_VIEWS=['today','kanban','matrix','ball','list','timeline','routine'];
+const TIME_VIEWS=['timer','calendar','report'];
+
+// === MODE SWITCHING (タスク管理 ↔ 工数管理) ===
+function switchMode(mode){
+  S.mode=mode;
+  document.querySelectorAll('.mode-b').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));
+  const isTime=mode==='time';
+  document.getElementById('viewTabs').style.display=isTime?'none':'flex';
+  document.getElementById('timeViewTabs').style.display=isTime?'flex':'none';
+  document.getElementById('datasetTabs').style.display=isTime?'none':'flex';
+  document.getElementById('timeFilters').style.display=isTime?'flex':'none';
+  document.getElementById('taskControls').style.display=isTime?'none':'flex';
+  document.getElementById('timeControls').style.display=isTime?'flex':'none';
+  // Switch to first view of that mode
+  if(isTime&&!TIME_VIEWS.includes(S.view)){S.view='timer';}
+  if(!isTime&&!TASK_VIEWS.includes(S.view)){S.view='today';}
+  // Update sub-tab highlights
+  const tabContainer=isTime?'timeViewTabs':'viewTabs';
+  document.getElementById(tabContainer).querySelectorAll('.nav-b').forEach(b=>b.classList.toggle('on',b.dataset.view===S.view));
+  Object.entries(VI).forEach(([k,v])=>document.getElementById(v).classList.toggle('on',k===S.view));
+  if(isTime)populateTimeFilters();
+  updateHash();render();
+}
+document.getElementById('modeTabs').querySelectorAll('.mode-b').forEach(b=>{
+  b.onclick=()=>switchMode(b.dataset.mode);
 });
+
+// === VIEW TAB HANDLERS ===
+function initViewTabs(containerId){
+  document.getElementById(containerId).querySelectorAll('.nav-b').forEach(b=>{
+    b.onclick=()=>{
+      document.getElementById(containerId).querySelectorAll('.nav-b').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');S.view=b.dataset.view;
+      Object.entries(VI).forEach(([k,v])=>document.getElementById(v).classList.toggle('on',k===S.view));
+      updateHash();render();
+      if(S.view==='timeline')requestAnimationFrame(()=>tlScrollToToday());
+    };
+  });
+}
+initViewTabs('viewTabs');
+initViewTabs('timeViewTabs');
+
 document.getElementById('datasetTabs').querySelectorAll('.ds-b').forEach(b=>{
   b.onclick=()=>{document.getElementById('datasetTabs').querySelectorAll('.ds-b').forEach(x=>x.classList.remove('on'));
     b.classList.add('on');S.ds=b.dataset.dataset;S.filters=[];updateHash();render();};
 });
 
+function populateTimeFilters(){
+  const clients=ttClients();
+  const projects=ttProjects();
+  document.getElementById('ttClientFilter').innerHTML=
+    `<option value="">全クライアント</option>`+clients.map(c=>`<option value="${c}" ${TT.filterClient===c?'selected':''}>${c}</option>`).join('');
+  document.getElementById('ttProjectFilter').innerHTML=
+    `<option value="">全プロジェクト</option>`+projects.map(p=>`<option value="${p}" ${TT.filterProject===p?'selected':''}>${p}</option>`).join('');
+  // Also populate global project selector
+  document.getElementById('ttProjectGlobal').innerHTML=
+    `<option value="">プロジェクト</option>`+projects.map(p=>`<option value="${p}">${p}</option>`).join('');
+}
+
 function populateUserSelect(){
   const people=new Set();
   [...S.work,...S.app].forEach(t=>(t.assignees||[]).forEach(a=>people.add(a)));
+  // Also add time entry users
+  TT.entries.forEach(e=>{if(e.user)people.add(e.user);});
   const sel=document.getElementById('userSelect');
   sel.innerHTML=`<option value="all">全員</option>`+[...people].sort().map(p=>`<option value="${p}">${fname(p)}</option>`).join('');
   sel.value=S.user;
 }
 document.getElementById('userSelect').onchange=function(){S.user=this.value;S.filters=[];updateHash();render();};
-document.querySelector('.user-label').textContent='TODO';
+
 function updateHash(){
   const p=new URLSearchParams();
   if(S.user!=='all')p.set('user',S.user);
   if(S.view!=='today')p.set('view',S.view);
   if(S.ds!=='work')p.set('ds',S.ds);
+  if(S.mode==='time')p.set('mode','time');
   const h=p.toString();
   history.replaceState(null,'',h?'?'+h:location.pathname);
-  document.title=S.user==='all'?'Team TODO':`${fname(S.user)} TODO`;
+  document.title=S.mode==='time'
+    ?(S.user==='all'?'TimeTracker':`${fname(S.user)} TimeTracker`)
+    :(S.user==='all'?'Team TODO':`${fname(S.user)} TODO`);
 }
 function loadHash(){
   const p=new URLSearchParams(location.search);
   if(p.get('user'))S.user=p.get('user');
-  if(p.get('view')){S.view=p.get('view');
-    document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(b=>{b.classList.toggle('on',b.dataset.view===S.view);});
-    Object.entries(VI).forEach(([k,v])=>document.getElementById(v).classList.toggle('on',k===S.view));
-  }
+  if(p.get('mode')){S.mode=p.get('mode');}
+  if(p.get('view')){S.view=p.get('view');}
   if(p.get('ds')){S.ds=p.get('ds');
     document.getElementById('datasetTabs').querySelectorAll('.ds-b').forEach(b=>{b.classList.toggle('on',b.dataset.dataset===S.ds);});
+  }
+  // Apply mode
+  if(S.mode==='time'){
+    switchMode('time');
+  } else {
+    S.mode='task';
+    document.getElementById('viewTabs').querySelectorAll('.nav-b').forEach(b=>{b.classList.toggle('on',b.dataset.view===S.view);});
+    Object.entries(VI).forEach(([k,v])=>document.getElementById(v).classList.toggle('on',k===S.view));
   }
 }
 
 document.getElementById('syncBtn').onclick=async function(){
-  this.classList.add('loading');await fetchSheet();this.classList.remove('loading');
+  this.classList.add('loading');await Promise.all([fetchSheet(),fetchTimeEntries()]);this.classList.remove('loading');
 };
 
 function render(){
@@ -1578,6 +1671,7 @@ let TT={
   entries:[],running:false,startTime:0,elapsed:0,
   desc:'',project:'',client:'',billable:true,
   weekOffset:0,interval:null,
+  filterClient:'',filterProject:'',
   favs:['アプリ制作','既存営業定例','新規営業定例','進捗報告','PJT_工数可視化']
 };
 function ldTT(){const s=localStorage.getItem(TT_KEY);if(s){const p=JSON.parse(s);Object.assign(TT,p);TT.running=false;TT.interval=null;TT.elapsed=0;}}
@@ -1617,6 +1711,8 @@ function ttFilteredEntries(){
     const uname=fname(S.user);
     e=e.filter(x=>x.user===S.user||x.user===uname||fname(x.user)===uname);
   }
+  if(TT.filterClient)e=e.filter(x=>x.client===TT.filterClient);
+  if(TT.filterProject)e=e.filter(x=>x.project===TT.filterProject);
   return e;
 }
 
@@ -1632,11 +1728,21 @@ function ttWeekDates(){
 function ttDateStr(d){return d.toISOString().slice(0,10);}
 function ttIsToday(d){const t=new Date();return ttDateStr(d)===ttDateStr(t);}
 
-// Timer controls
+// Timer controls — global bar always visible in 工数管理 mode
+function ttToggle(){
+  if(TT.running)ttStop(); else ttStart();
+}
 function ttStart(){
+  // Read from global bar
+  const descEl=document.getElementById('ttDescGlobal');
+  const projEl=document.getElementById('ttProjectGlobal');
+  const billEl=document.getElementById('ttBillableGlobal');
+  if(descEl)TT.desc=descEl.value;
+  if(projEl)TT.project=projEl.value;
+  if(billEl)TT.billable=billEl.checked;
   TT.running=true;TT.startTime=Date.now();TT.elapsed=0;
   TT.interval=setInterval(()=>{TT.elapsed=Math.floor((Date.now()-TT.startTime)/1000);renderTimerClock();},1000);
-  renderTimer();
+  updateTimerUI();
 }
 function ttStop(){
   clearInterval(TT.interval);TT.running=false;
@@ -1645,11 +1751,29 @@ function ttStop(){
     TT.entries.unshift({user:S.user==='all'?'rena':S.user,email:'',client:TT.client||'StandArrow',project:TT.project||'',task:'',desc:TT.desc||'',billable:TT.billable,startDate:today,endDate:today,duration:TT.elapsed,tags:'',hourlyRate:2000});
     svTT();
   }
-  TT.elapsed=0;TT.desc='';renderTimer();
+  TT.elapsed=0;TT.desc='';
+  const descEl=document.getElementById('ttDescGlobal');
+  if(descEl)descEl.value='';
+  updateTimerUI();render();
 }
-function renderTimerClock(){const el=document.getElementById('ttClock');if(el)el.textContent=ttFmt(TT.elapsed);}
-
-function ttUseFav(name){TT.desc=name;renderTimer();ttStart();}
+function renderTimerClock(){
+  const el=document.getElementById('ttClockGlobal');if(el)el.textContent=ttFmt(TT.elapsed);
+}
+function updateTimerUI(){
+  const btn=document.getElementById('ttStartBtn');
+  const dot=document.getElementById('ttRunningDot');
+  if(btn){
+    btn.textContent=TT.running?'STOP':'START';
+    btn.className=TT.running?'tt-start stop':'tt-start go';
+  }
+  if(dot)dot.style.background=TT.running?'var(--red)':'var(--text-3)';
+}
+function ttUseFav(name){
+  TT.desc=name;
+  const descEl=document.getElementById('ttDescGlobal');
+  if(descEl)descEl.value=name;
+  ttStart();
+}
 
 // Unique projects/clients from entries
 function ttProjects(){return[...new Set(TT.entries.map(e=>e.project).filter(Boolean))].sort();}
@@ -1658,29 +1782,12 @@ function ttClients(){return[...new Set(TT.entries.map(e=>e.client).filter(Boolea
 // ===== RENDER TIMER VIEW =====
 function renderTimer(){
   const el=document.getElementById('v-timer');if(!el)return;
-  const projects=ttProjects();
-  const clients=ttClients();
   const favColors=['#7c3aed','#22c55e','#3b82f6','#ec4899','#f59e0b','#14b8a6','#ef4444','#6366f1'];
 
   el.innerHTML=`<div class="tt-wrap">
-    <div class="tt-timer-box">
-      <div class="tt-timer-row">
-        <input class="tt-desc" id="ttDesc" placeholder="何をしていますか？" value="${TT.desc||''}" onchange="TT.desc=this.value">
-        <select class="tt-sel" id="ttProject" onchange="TT.project=this.value">
-          <option value="">プロジェクト</option>${projects.map(p=>`<option value="${p}" ${TT.project===p?'selected':''}>${p}</option>`).join('')}
-        </select>
-        <select class="tt-sel" id="ttClient" onchange="TT.client=this.value">
-          <option value="">クライアント</option>${clients.map(c=>`<option value="${c}" ${TT.client===c?'selected':''}>${c}</option>`).join('')}
-        </select>
-        <label class="tt-billable"><input type="checkbox" ${TT.billable?'checked':''} onchange="TT.billable=this.checked">$</label>
-        <div class="tt-clock" id="ttClock">${ttFmt(TT.elapsed)}</div>
-        ${TT.running
-          ?'<button class="tt-start stop" onclick="ttStop()">STOP</button>'
-          :'<button class="tt-start go" onclick="ttStart()">START</button>'}
-      </div>
-      <div class="tt-favs">
-        ${TT.favs.map((f,i)=>`<div class="tt-fav" onclick="ttUseFav('${f}')"><span class="dot" style="background:${favColors[i%favColors.length]}"></span>${f}</div>`).join('')}
-      </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px">
+      <span style="font-size:11px;color:var(--text-3);font-weight:600;line-height:30px;margin-right:4px">FAVORITES</span>
+      ${TT.favs.map((f,i)=>`<div class="tt-fav" onclick="ttUseFav('${f.replace(/'/g,"\\'")}')"><span class="dot" style="background:${favColors[i%favColors.length]}"></span><span style="color:var(--text-3);font-size:10px;margin-right:2px">${i+1}</span>${f}</div>`).join('')}
     </div>
     ${renderTimerEntries()}
   </div>`;
