@@ -242,6 +242,12 @@
   .lt tr:nth-child(even) td{background:var(--surface-hover);}
   .lt tr:hover td{background:var(--accent-bg);transition-duration:80ms;}
   .lt tr{cursor:pointer;}
+  .lt-sortable{cursor:pointer;user-select:none;}
+  .lt-sortable:hover{color:var(--accent);}
+  .lt-sort{font-size:10px;color:var(--text-3);margin-left:2px;opacity:.4;}
+  .lt-sort.on{opacity:1;color:var(--accent);}
+  .lt-filter{margin-top:4px;padding:3px 6px;font-size:10px;border:1px solid var(--border-light);border-radius:5px;background:var(--surface);color:var(--text-2);font-family:inherit;cursor:pointer;width:100%;max-width:120px;}
+  .lt-filter:focus{border-color:var(--accent);outline:none;}
   .sb{font-size:10px;font-weight:600;padding:3px 10px;border-radius:100px;white-space:nowrap;letter-spacing:.2px;}
   .sb.todo{background:var(--surface2);color:var(--text-2);}
   .sb.progress{background:var(--blue-bg);color:var(--blue-t);}
@@ -1085,10 +1091,73 @@ function renderBall(){
 }
 
 // LIST
+// === LIST VIEW: sort & column filter state ===
+let listSort={col:'date',dir:'asc'};
+let listColFilters={status:'',project:'',ballOwner:'',assignee:''};
+
+function listToggleSort(col){
+  if(listSort.col===col)listSort.dir=listSort.dir==='asc'?'desc':'asc';
+  else{listSort.col=col;listSort.dir='asc';}
+  render();
+}
+function listSetFilter(col,val){listColFilters[col]=val;render();}
+
 function renderList(){
-  const t=ts().filter(x=>pfMatch(x)&&sfMatch(x)).sort((a,b)=>new Date(a.date||'2099')-new Date(b.date||'2099'));
+  let t=ts().filter(x=>pfMatch(x)&&sfMatch(x));
+
+  // Column filters
+  if(listColFilters.status)t=t.filter(x=>sk(x.status)===listColFilters.status);
+  if(listColFilters.project)t=t.filter(x=>x.project===listColFilters.project);
+  if(listColFilters.ballOwner)t=t.filter(x=>x.ballOwner===listColFilters.ballOwner);
+  if(listColFilters.assignee)t=t.filter(x=>(x.assignees||[]).includes(listColFilters.assignee));
+
+  // Sort
+  const dir=listSort.dir==='asc'?1:-1;
+  t.sort((a,b)=>{
+    switch(listSort.col){
+      case'status':return dir*(sk(a.status)||'').localeCompare(sk(b.status)||'');
+      case'project':return dir*(a.project||'').localeCompare(b.project||'');
+      case'name':return dir*(a.name||'').localeCompare(b.name||'');
+      case'stars':return dir*((a.stars||0)-(b.stars||0));
+      case'hearts':return dir*((a.hearts||0)-(b.hearts||0));
+      case'date':return dir*(new Date(a.date||'2099')-new Date(b.date||'2099'));
+      case'ballOwner':return dir*(a.ballOwner||'').localeCompare(b.ballOwner||'');
+      default:return 0;
+    }
+  });
+
+  // Unique values for filter dropdowns
+  const allT=ts().filter(x=>pfMatch(x)&&sfMatch(x));
+  const uProjects=[...new Set(allT.map(x=>x.project).filter(Boolean))].sort();
+  const uBall=[...new Set(allT.map(x=>x.ballOwner).filter(Boolean))].sort();
+  const uAssignees=[...new Set(allT.flatMap(x=>x.assignees||[]))].sort();
+
+  const sortIcon=(col)=>{
+    if(listSort.col!==col)return'<span class="lt-sort">⇅</span>';
+    return listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>';
+  };
+  const filterSel=(col,opts,labelFn)=>{
+    const val=listColFilters[col];
+    return`<select class="lt-filter" onchange="listSetFilter('${col}',this.value)">
+      <option value="">全て</option>
+      ${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${labelFn?labelFn(o):o}</option>`).join('')}
+    </select>`;
+  };
+
   document.getElementById('v-list').innerHTML=`<div class="ls-w"><table class="lt">
-    <thead><tr><th>ステータス</th><th>プロジェクト</th><th>タスク</th><th>★</th><th>♡</th><th>期日</th><th>ボール</th><th>担当</th><th>メモ</th></tr></thead>
+    <thead>
+      <tr>
+        <th onclick="listToggleSort('status')" class="lt-sortable">ステータス ${sortIcon('status')}<br>${filterSel('status',['todo','progress','waiting','done'],k=>SL[k])}</th>
+        <th onclick="listToggleSort('project')" class="lt-sortable">プロジェクト ${sortIcon('project')}<br>${filterSel('project',uProjects)}</th>
+        <th onclick="listToggleSort('name')" class="lt-sortable">タスク ${sortIcon('name')}</th>
+        <th onclick="listToggleSort('stars')" class="lt-sortable">★ ${sortIcon('stars')}</th>
+        <th onclick="listToggleSort('hearts')" class="lt-sortable">♡ ${sortIcon('hearts')}</th>
+        <th onclick="listToggleSort('date')" class="lt-sortable">期日 ${sortIcon('date')}</th>
+        <th onclick="listToggleSort('ballOwner')" class="lt-sortable">ボール ${sortIcon('ballOwner')}<br>${filterSel('ballOwner',uBall,fname)}</th>
+        <th>担当<br>${filterSel('assignee',uAssignees,fname)}</th>
+        <th>メモ</th>
+      </tr>
+    </thead>
     <tbody>${t.map(x=>{const ov=isO(x.date),td=isT(x.date);
       return`<tr onclick="openModal('${x.id}')">
         <td><span class="sb ${sk(x.status)}">${SL[sk(x.status)]}</span></td>
@@ -1100,7 +1169,11 @@ function renderList(){
         <td style="font-size:11px;color:var(--text-2)">${x.ballOwner?fname(x.ballOwner):'-'}</td>
         <td style="font-size:11px;color:var(--text-3)">${(x.assignees||[]).map(a=>fname(a)).join(', ')}</td>
         <td style="color:var(--text-3);font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.notes||''}</td>
-      </tr>`;}).join('')}</tbody></table></div>`;
+      </tr>`;}).join('')}
+    ${t.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--text-3);padding:32px">該当するタスクがありません</td></tr>':''}
+    </tbody></table>
+    <div style="padding:8px 12px;font-size:11px;color:var(--text-3)">${t.length}件表示</div>
+  </div>`;
 }
 
 // TIMELINE — Notion-style with day-level grid, two-row header, flat bars
