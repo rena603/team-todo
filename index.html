@@ -585,11 +585,11 @@
   <div class="md">
     <h3 id="modalTitle">新規タスク</h3>
     <label>タスク名</label><input type="text" id="mName">
-    <label>プロジェクト</label>
+    <label>クライアント</label>
     <div class="proj-wrap">
       <select id="mProject"></select>
       <div class="proj-add" id="projAdd">
-        <input type="text" id="projNewName" placeholder="新しいプロジェクト名">
+        <input type="text" id="projNewName" placeholder="新しいクライアント名">
         <button class="bt bt-p" id="projAddBtn" style="padding:6px 12px;font-size:12px">追加</button>
       </div>
     </div>
@@ -624,7 +624,7 @@
   <div class="md">
     <h3>ルーティン登録</h3>
     <label>タスク名</label><input type="text" id="rmName">
-    <label>プロジェクト（任意）</label>
+    <label>クライアント（任意）</label>
     <div class="proj-wrap">
       <select id="rmProject"></select>
       <div class="proj-add" id="rmProjAdd">
@@ -654,7 +654,7 @@
 
 <div class="mo" id="projModal">
   <div class="md" style="max-width:540px">
-    <h3>案件カラー設定</h3>
+    <h3>クライアントカラー設定</h3>
     <div class="pm-list" id="pmList"></div>
     <div class="ma"><button class="bt bt-g" onclick="document.getElementById('projModal').classList.remove('open')">閉じる</button></div>
   </div>
@@ -832,7 +832,7 @@ function renderFilters(){
   const stOpts=[{k:'todo',l:'未着手',c:'var(--text-3)'},{k:'progress',l:'進行中',c:'var(--blue)'},{k:'waiting',l:'確認中',c:'var(--yellow)'},{k:'done',l:'完了',c:'var(--green)'}];
   const pCnt=S.filters.length;
   const sCnt=S.sFilters.length;
-  const pLabel=pCnt?`案件 (${pCnt})`:'案件';
+  const pLabel=pCnt?`クライアント (${pCnt})`:'クライアント';
   const sLabel=sCnt&&sCnt<4?`ステータス (${sCnt})`:'ステータス';
   const chevron='<svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg>';
   document.getElementById('filters').innerHTML=
@@ -874,7 +874,7 @@ function openProjModal(){
       <div class="pm-cnt">${cnt}件</div>
       <div class="pm-colors">${PROJ_PALETTE.map(c=>`<div class="pm-c ${col.id===c.id?'on':''}" style="background:${c.main}" onclick="setProjColor('${p.replace(/'/g,"\\'")}','${c.id}')"></div>`).join('')}</div>
     </div>`;
-  }).join('')||'<div style="color:var(--text-3);padding:16px;text-align:center">案件がありません</div>';
+  }).join('')||'<div style="color:var(--text-3);padding:16px;text-align:center">クライアントがありません</div>';
   document.getElementById('projModal').classList.add('open');
 }
 function setProjColor(proj,colorId){
@@ -1229,7 +1229,7 @@ function renderList(){
     <thead>
       <tr>
         <th>${colHeader('status','ステータス',uStatuses,k=>SL[k])}</th>
-        <th>${colHeader('project','プロジェクト',uProjects)}</th>
+        <th>${colHeader('project','クライアント',uProjects)}</th>
         <th class="lt-sortable" onclick="listToggleSort('name')">タスク ${listSort.col==='name'?(listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'<span class="lt-sort">⇅</span>'}</th>
         <th class="lt-sortable" onclick="listToggleSort('stars')">★ ${listSort.col==='stars'?(listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'<span class="lt-sort">⇅</span>'}</th>
         <th class="lt-sortable" onclick="listToggleSort('hearts')">♡ ${listSort.col==='hearts'?(listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'<span class="lt-sort">⇅</span>'}</th>
@@ -1596,7 +1596,7 @@ function populateProjectSelect(currentVal){
     // Fallback: flat list
     optionsHtml=taskProjects.map(p=>`<option value="${p}">${p}</option>`).join('');
   }
-  optionsHtml+=`<option value="__new__">+ 新規プロジェクト追加</option>`;
+  optionsHtml+=`<option value="__new__">+ 新規クライアント追加</option>`;
   sel.innerHTML=optionsHtml;
 
   const allProjNames=[...new Set([...projects.map(p=>p.name),...taskProjects])];
@@ -1757,7 +1757,7 @@ function openRoutineModal(id){
   const m=document.getElementById('routineModal');
   const ps=getProjects();
   const rmProj=document.getElementById('rmProject');
-  rmProj.innerHTML=`<option value="">なし</option>`+ps.map(p=>`<option value="${p}">${p}</option>`).join('')+`<option value="__new__">+ 新規プロジェクト追加</option>`;
+  rmProj.innerHTML=`<option value="">なし</option>`+ps.map(p=>`<option value="${p}">${p}</option>`).join('')+`<option value="__new__">+ 新規クライアント追加</option>`;
   document.getElementById('rmProjAdd').classList.remove('show');
   rmProj.onchange=function(){
     if(rmProj.value==='__new__'){document.getElementById('rmProjAdd').classList.add('show');document.getElementById('rmProjNewName').focus();}
