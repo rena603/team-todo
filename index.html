@@ -501,6 +501,60 @@
   .tt-cal-hdr .tt-day-total{font-size:12px;font-weight:700;color:var(--text);margin-top:2px;font-variant-numeric:tabular-nums;}
   .tt-cal-hdr .tt-day-total.has-time{color:var(--accent);}
 
+  /* ===== CALENDAR MONTH VIEW ===== */
+  .tt-cal-month{display:grid;grid-template-columns:repeat(7,1fr);background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-sm);overflow:hidden;border:1px solid var(--border-light);}
+  .tt-cal-month-hdr{padding:8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-3);background:var(--surface2);border-bottom:1px solid var(--border);}
+  .tt-cal-month-cell{min-height:90px;padding:4px 6px;border-right:1px solid var(--border-light);border-bottom:1px solid var(--border-light);font-size:11px;position:relative;background:var(--surface);transition:background var(--tr);}
+  .tt-cal-month-cell:hover{background:var(--surface-hover);}
+  .tt-cal-month-cell.other-month{background:var(--surface2);opacity:.5;}
+  .tt-cal-month-cell.today-cell{background:var(--accent-bg);}
+  .tt-cal-month-cell .day-num{font-weight:700;font-size:12px;margin-bottom:4px;color:var(--text-2);}
+  .tt-cal-month-cell.today-cell .day-num{color:var(--accent);}
+  .tt-cal-month-entry{font-size:9px;padding:1px 4px;border-radius:3px;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-left:2px solid;cursor:default;}
+  .tt-cal-month-total{font-size:10px;font-weight:700;color:var(--text-3);margin-top:2px;}
+
+  /* ===== CALENDAR YEAR VIEW ===== */
+  .tt-cal-year{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-sm);overflow:hidden;border:1px solid var(--border-light);}
+  .tt-cal-year table{width:100%;border-collapse:collapse;font-size:12px;}
+  .tt-cal-year th{text-align:left;padding:10px 16px;background:var(--surface2);font-weight:600;color:var(--text-2);font-size:11px;}
+  .tt-cal-year td{padding:8px 16px;border-top:1px solid var(--border-light);}
+  .tt-cal-year tr:hover{background:var(--surface-hover);}
+  .tt-cal-year .month-bar{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;}
+  .tt-cal-year .month-bar-fill{height:100%;border-radius:3px;background:var(--accent);}
+
+  /* ===== CALENDAR FAVORITES SIDEBAR ===== */
+  .tt-cal-layout{display:flex;gap:20px;}
+  .tt-cal-main{flex:1;min-width:0;}
+  .tt-cal-sidebar{width:200px;flex-shrink:0;}
+  .tt-cal-sidebar h4{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+  .tt-cal-sidebar-fav{padding:8px 10px;border:1px solid var(--border-light);border-radius:var(--r);font-size:11px;font-weight:500;cursor:pointer;color:var(--text-2);transition:all var(--tr);display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+  .tt-cal-sidebar-fav:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+  .tt-cal-sidebar-fav .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+  /* ===== MANAGE EDIT BUTTON ===== */
+  .manage-edit-btn{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:4px;transition:all var(--tr);}
+  .manage-edit-btn:hover{color:var(--accent);background:var(--accent-bg);}
+  .manage-inline-input{padding:4px 8px;font-size:13px;border:1.5px solid var(--accent);border-radius:var(--r);background:var(--bg);font-family:inherit;outline:none;width:100%;box-shadow:0 0 0 3px rgba(79,106,245,.1);}
+
+  /* ===== ASSIGNEE MULTI-SELECT DROPDOWN ===== */
+  .assignee-drop{position:relative;}
+  .assignee-drop-btn{padding:8px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text-2);font-size:12px;font-weight:500;cursor:pointer;width:100%;text-align:left;display:flex;align-items:center;gap:6px;transition:all var(--tr);font-family:inherit;}
+  .assignee-drop-btn:hover{border-color:var(--accent);}
+  .assignee-drop-btn svg{width:10px;height:10px;margin-left:auto;transition:transform .15s;}
+  .assignee-drop.open .assignee-drop-btn{border-color:var(--accent);box-shadow:0 0 0 4px rgba(79,106,245,.08);}
+  .assignee-drop.open .assignee-drop-btn svg{transform:rotate(180deg);}
+  .assignee-drop-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-lg);z-index:200;padding:6px 0;max-height:240px;overflow-y:auto;opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .12s,transform .12s,visibility .12s;}
+  .assignee-drop.open .assignee-drop-menu{opacity:1;visibility:visible;transform:translateY(0);}
+  .assignee-drop-menu label{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:500;transition:background .1s;}
+  .assignee-drop-menu label:hover{background:var(--surface2);}
+  .assignee-drop-menu label input{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+  .assignee-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+  .assignee-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;display:flex;align-items:center;gap:4px;}
+
+  /* ===== ADD TASK BUTTON (views) ===== */
+  .view-add-btn{padding:8px 16px;border:1px dashed var(--border);border-radius:var(--r);background:none;color:var(--text-3);font-size:12px;font-weight:500;cursor:pointer;transition:all var(--tr);font-family:inherit;display:inline-flex;align-items:center;gap:4px;}
+  .view-add-btn:hover{background:var(--accent-bg);color:var(--accent);border-color:var(--accent);}
+
   /* ===== MODAL BILLABLE TOGGLE ===== */
   .billable-toggle{display:flex;align-items:center;gap:10px;margin-top:8px;}
   .billable-toggle-track{width:40px;height:22px;border-radius:11px;background:var(--surface3);cursor:pointer;position:relative;transition:background var(--tr);flex-shrink:0;}
@@ -530,8 +584,7 @@
     <button class="nav-b" data-view="routine" data-mode="task">ルーティン</button>
   </div>
   <div class="nav" id="timeViewTabs" style="display:none">
-    <button class="nav-b on" data-view="timer" data-mode="time">タイマー</button>
-    <button class="nav-b" data-view="calendar" data-mode="time">カレンダー</button>
+    <button class="nav-b on" data-view="calendar" data-mode="time">カレンダー</button>
     <button class="nav-b" data-view="report" data-mode="time">レポート</button>
     <button class="nav-b" data-view="manage" data-mode="time">管理</button>
   </div>
@@ -576,7 +629,6 @@
 <div class="vw" id="v-list"></div>
 <div class="vw" id="v-timeline"></div>
 <div class="vw" id="v-routine"></div>
-<div class="vw" id="v-timer"></div>
 <div class="vw" id="v-calendar"></div>
 <div class="vw" id="v-report"></div>
 <div class="vw" id="v-manage"></div>
@@ -588,10 +640,6 @@
     <label>クライアント</label>
     <div class="proj-wrap">
       <select id="mProject"></select>
-      <div class="proj-add" id="projAdd">
-        <input type="text" id="projNewName" placeholder="新しいクライアント名">
-        <button class="bt bt-p" id="projAddBtn" style="padding:6px 12px;font-size:12px">追加</button>
-      </div>
     </div>
     <div class="fr">
       <div><label>ステータス</label><select id="mStatus"><option value="todo">未着手</option><option value="progress">進行中</option><option value="waiting">先方確認中</option><option value="done">完了</option></select></div>
@@ -603,14 +651,13 @@
       <span class="billable-toggle-label" id="mBillableLabel">稼働（Billable）</span>
     </div>
     <label>担当者</label>
-    <div class="ppl-sel" id="mAssigneeWrap"></div>
-    <div class="ppl-add"><input type="text" id="mAssigneeNew" placeholder="新規追加"><button type="button" id="mAssigneeAddBtn">+</button></div>
+    <div class="assignee-drop" id="mAssigneeDrop">
+      <button type="button" class="assignee-drop-btn" onclick="document.getElementById('mAssigneeDrop').classList.toggle('open');event.stopPropagation()">担当者を選択 <svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg></button>
+      <div class="assignee-drop-menu" id="mAssigneeWrap" onclick="event.stopPropagation()"></div>
+    </div>
+    <div class="assignee-tags" id="mAssigneeTags"></div>
     <label>ボール所在</label>
     <select id="mBallOwner"><option value="">未設定</option></select>
-    <div class="rr">
-      <div class="rg"><label>緊急度</label><div class="ri" id="mStars"><span class="rc rc-s" data-val="1">&#9733;</span><span class="rc rc-s" data-val="2">&#9733;</span><span class="rc rc-s" data-val="3">&#9733;</span></div></div>
-      <div class="rg"><label>重要度</label><div class="ri" id="mHearts"><span class="rc rc-h" data-val="1">&#9829;</span><span class="rc rc-h" data-val="2">&#9829;</span><span class="rc rc-h" data-val="3">&#9829;</span></div></div>
-    </div>
     <label>メモ</label><input type="text" id="mNotes" placeholder="メモ">
     <div class="ma">
       <button class="bt bt-d" id="mDelete" style="display:none;margin-right:auto">削除</button>
@@ -1017,7 +1064,7 @@ function renderMatrix(){
   let zlH=zLabels.map(z=>`<div class="mx-zlabel" style="left:${z.x}%;top:${z.y}%;transform:translate(-50%,-50%);color:${z.c};font-size:11px">${z.t}</div>`).join('');
 
   document.getElementById('v-matrix').innerHTML=`<div class="mx-w">
-    <div class="mx-hint">カードを自由にドラッグ移動 / 位置に応じて★♡を自動更新（各3段階）/ クリックで編集</div>
+    <div class="mx-hint" style="display:flex;align-items:center;gap:12px">カードを自由にドラッグ移動 / 位置に応じて★♡を自動更新（各3段階）/ クリックで編集 <button class="view-add-btn" onclick="openModal()">+ 新規タスク</button></div>
     <div class="mx-outer">
       <div class="mx-ylabel">♡ 重 要 度</div>
       <div class="mx-yticks"><span>♡3</span><span>♡2</span><span>♡1</span></div>
@@ -1123,7 +1170,8 @@ function renderBall(){
     const oc=items.filter(x=>isO(x.date)).length,tc=items.filter(x=>isT(x.date)).length;
     const ur=oc?`<span class="urg">${oc}件超過</span>`:tc?`<span class="urg" style="color:var(--orange)">${tc}件今日</span>`:'';
     return`<div class="bl-c"><div class="bl-h"><div class="bl-av" style="background:${userColor(k)};color:${userTextColor(k)}">${ini(k)}</div><span>${fname(k)}ボール</span>${ur}<span class="cnt">${items.length}</span></div>
-    <div class="bl-cards" ondragover="onDO(event)" ondrop="onBallDR(event,'${k==='未設定'?'':k}')">${items.length?items.map(x=>sH(x)).join(''):'<div style="padding:16px 8px;text-align:center;color:var(--text-3);font-size:11px">タスクなし</div>'}</div></div>`;
+    <div class="bl-cards" ondragover="onDO(event)" ondrop="onBallDR(event,'${k==='未設定'?'':k}')">${items.length?items.map(x=>sH(x)).join(''):'<div style="padding:16px 8px;text-align:center;color:var(--text-3);font-size:11px">タスクなし</div>'}
+    <button class="view-add-btn" onclick="openModal()" style="width:100%;margin-top:8px">+ 新規タスク</button></div></div>`;
   }).join('')}</div>`;
   initBallColDrag();
 }
@@ -1253,6 +1301,7 @@ function renderList(){
         <td style="color:var(--text-3);font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.notes||''}</td>
       </tr>`;}).join('')}
     ${t.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--text-3);padding:32px">該当するタスクがありません</td></tr>':''}
+    <tr onclick="openModal()" style="cursor:pointer"><td colspan="9" style="text-align:center;padding:10px"><button class="view-add-btn" onclick="event.stopPropagation();openModal()">+ 新規タスク</button></td></tr>
     </tbody></table>
     <div style="padding:8px 12px;font-size:11px;color:var(--text-3)">${t.length}件表示</div>
   </div>`;
@@ -1325,6 +1374,7 @@ function renderTimeline(){
   h+=`<button class="tl-zoom-btn${tlZoom==='month'?' active':''}" onclick="tlZoom='month';renderTimeline()">月</button>`;
   h+=`<button class="tl-zoom-btn${tlZoom==='quarter'?' active':''}" onclick="tlZoom='quarter';renderTimeline()">四半期</button>`;
   h+=`<button class="tl-today-btn" onclick="tlScrollToToday()">今日</button>`;
+  h+=`<button class="view-add-btn" onclick="openModal()" style="margin-left:8px">+ 新規タスク</button>`;
   h+=`</div>`;
 
   h+=`<div class="tl-inner" style="width:${totalW}px">`;
@@ -1597,7 +1647,6 @@ function populateProjectSelect(currentVal){
     // Fallback: flat list
     optionsHtml=taskProjects.map(p=>`<option value="${p}">${p}</option>`).join('');
   }
-  optionsHtml+=`<option value="__new__">+ 新規クライアント追加</option>`;
   sel.innerHTML=optionsHtml;
 
   const allProjNames=[...new Set([...projects.map(p=>p.name),...taskProjects])];
@@ -1606,46 +1655,31 @@ function populateProjectSelect(currentVal){
     sel.insertAdjacentHTML('afterbegin',`<option value="${currentVal}">${currentVal}</option>`);
     sel.value=currentVal;
   }
-  document.getElementById('projAdd').classList.remove('show');
-  sel.onchange=function(){
-    if(sel.value==='__new__'){document.getElementById('projAdd').classList.add('show');document.getElementById('projNewName').focus();}
-    else{document.getElementById('projAdd').classList.remove('show');}
-  };
 }
-document.getElementById('projAddBtn').onclick=function(){
-  const name=document.getElementById('projNewName').value.trim();
-  if(!name)return;
-  const sel=document.getElementById('mProject');
-  sel.insertAdjacentHTML('beforeend',`<option value="${name}">${name}</option>`);
-  // Move __new__ to end
-  const newOpt=sel.querySelector('option[value="__new__"]');
-  sel.appendChild(newOpt);
-  sel.value=name;
-  document.getElementById('projAdd').classList.remove('show');
-  document.getElementById('projNewName').value='';
-};
 
 const TEAM=['Ami','Ayano Yo','MorishimaChihiro','OshinoKanako','Mai','Midori Fukihara','Nanarabbit626','rena','Satoshi Yamashita','IihoshiSatsuki','Shun Saito','T19takahashi','Tatsuya Eguchi','杉本'];
-const MEMBER_RATES={'Ami':22,'Ayano Yo':22,'MorishimaChihiro':20,'OshinoKanako':22,'Mai':22,'Midori Fukihara':22,'Nanarabbit626':22,'rena':20,'Satoshi Yamashita':20,'IihoshiSatsuki':15,'Shun Saito':20,'T19takahashi':22,'Tatsuya Eguchi':0,'杉本':22};
+const MEMBER_RATES={'Ami':3300,'Ayano Yo':3300,'MorishimaChihiro':3000,'OshinoKanako':3300,'Mai':3300,'Midori Fukihara':3300,'Nanarabbit626':3300,'rena':3000,'Satoshi Yamashita':3000,'IihoshiSatsuki':2250,'Shun Saito':3000,'T19takahashi':3300,'Tatsuya Eguchi':0,'杉本':3300};
 function populatePeople(selectedAssignees,selectedBall){
   const wrap=document.getElementById('mAssigneeWrap');
   const members=[...TEAM];
   selectedAssignees.forEach(a=>{if(!members.includes(a))members.push(a);});
-  wrap.innerHTML=members.map(p=>`<label><input type="checkbox" value="${p}"${selectedAssignees.includes(p)?' checked':''}>${fname(p)}</label>`).join('');
+  wrap.innerHTML=members.map(p=>`<label><input type="checkbox" value="${p}"${selectedAssignees.includes(p)?' checked':''} onchange="updateAssigneeTags()">${fname(p)}</label>`).join('');
   const ballPpl=new Set([...members,'先方']);
   allTasks().forEach(t=>{if(t.ballOwner&&t.ballOwner.trim())ballPpl.add(t.ballOwner.trim());});
   const sel=document.getElementById('mBallOwner');
   sel.innerHTML=`<option value="">未設定</option>`+[...ballPpl].sort((a,b)=>{if(a==='先方')return-1;if(b==='先方')return 1;return a.localeCompare(b);}).map(p=>`<option value="${p}">${p==='先方'?'先方':fname(p)}</option>`).join('');
   sel.value=selectedBall;
+  updateAssigneeTags();
 }
-document.getElementById('mAssigneeAddBtn').onclick=function(){
-  const v=document.getElementById('mAssigneeNew').value.trim();if(!v)return;
-  const wrap=document.getElementById('mAssigneeWrap');
-  wrap.insertAdjacentHTML('beforeend',`<label><input type="checkbox" value="${v}" checked>${fname(v)}</label>`);
-  const sel=document.getElementById('mBallOwner');
-  sel.insertAdjacentHTML('beforeend',`<option value="${v}">${fname(v)}</option>`);
-  document.getElementById('mAssigneeNew').value='';
-};
+function updateAssigneeTags(){
+  const checked=[...document.querySelectorAll('#mAssigneeWrap input:checked')].map(i=>i.value);
+  const btn=document.querySelector('#mAssigneeDrop .assignee-drop-btn');
+  if(btn)btn.innerHTML=(checked.length?`${checked.length}名選択中`:'担当者を選択')+' <svg viewBox="0 0 10 6" width="10" height="10"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg>';
+  const tags=document.getElementById('mAssigneeTags');
+  if(tags)tags.innerHTML=checked.map(a=>{const c=getProjColor(a);return`<span class="assignee-tag" style="background:${userColor(a)}20;color:${userColor(a)}"><span style="width:14px;height:14px;border-radius:50%;background:${userColor(a)};color:${userTextColor(a)};display:inline-flex;align-items:center;justify-content:center;font-size:7px;font-weight:700">${ini(a)}</span>${fname(a)}</span>`;}).join('');
+}
+// Close assignee dropdown on outside click
+document.addEventListener('click',function(e){if(!e.target.closest('#mAssigneeDrop'))document.getElementById('mAssigneeDrop').classList.remove('open');});
 
 let mBillable=true;
 function toggleModalBillable(){
@@ -1690,7 +1724,6 @@ function openModal(id,ds){
     setModalBillable(true);
     document.getElementById('mDelete').style.display='none';
   }
-  setupR('mStars',()=>S.mS,v=>S.mS=v);setupR('mHearts',()=>S.mH,v=>S.mH=v);
   document.getElementById('modal').classList.add('open');
 }
 
@@ -1698,8 +1731,7 @@ function closeModal(){document.getElementById('modal').classList.remove('open');
 
 document.getElementById('mSave').onclick=function(){
   const nm=document.getElementById('mName').value.trim();if(!nm)return;
-  const projVal=document.getElementById('mProject').value;
-  const proj=projVal==='__new__'?document.getElementById('projNewName').value.trim():projVal;
+  const proj=document.getElementById('mProject').value;
   const d={name:nm,project:proj,status:document.getElementById('mStatus').value,
     date:document.getElementById('mDate').value,dateStart:'',dateEnd:'',
     assignees:[...document.querySelectorAll('#mAssigneeWrap input:checked')].map(i=>i.value),
@@ -1814,9 +1846,9 @@ document.addEventListener('click',e=>{
   if(e.target===document.getElementById('routineModal'))closeRoutineModal();
 });
 
-const VI={today:'v-today',kanban:'v-kanban',matrix:'v-matrix',ball:'v-ball',list:'v-list',timeline:'v-timeline',routine:'v-routine',timer:'v-timer',calendar:'v-calendar',report:'v-report',manage:'v-manage'};
+const VI={today:'v-today',kanban:'v-kanban',matrix:'v-matrix',ball:'v-ball',list:'v-list',timeline:'v-timeline',routine:'v-routine',calendar:'v-calendar',report:'v-report',manage:'v-manage'};
 const TASK_VIEWS=['today','kanban','matrix','ball','list','timeline','routine'];
-const TIME_VIEWS=['timer','calendar','report','manage'];
+const TIME_VIEWS=['calendar','report','manage'];
 
 // === MODE SWITCHING (タスク管理 ↔ 工数管理) ===
 function switchMode(mode){
@@ -1830,7 +1862,7 @@ function switchMode(mode){
   document.getElementById('taskControls').style.display=isTime?'none':'flex';
   document.getElementById('timeControls').style.display=isTime?'flex':'none';
   // Switch to first view of that mode
-  if(isTime&&!TIME_VIEWS.includes(S.view)){S.view='timer';}
+  if(isTime&&!TIME_VIEWS.includes(S.view)){S.view='calendar';}
   if(!isTime&&!TASK_VIEWS.includes(S.view)){S.view='today';}
   // Update sub-tab highlights
   const tabContainer=isTime?'timeViewTabs':'viewTabs';
@@ -1922,7 +1954,7 @@ function render(){
   // Save ball column scroll positions
   const ballScrolls=[];
   document.querySelectorAll('.bl-c').forEach(c=>ballScrolls.push(c.scrollTop));
-  populateUserSelect();renderSum();renderFilters();renderToday();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();renderRoutine();renderTimer();renderCalendar();renderReport();renderManage();
+  populateUserSelect();renderSum();renderFilters();renderToday();renderKanban();renderMatrix();renderBall();renderList();renderTimeline();renderRoutine();renderCalendar();renderReport();renderManage();
   // Restore scroll position, but let timeline handle its own scroll-to-today
   if(S.view!=='timeline'){const vw2=document.getElementById(VI[S.view]);if(vw2)vw2.scrollLeft=sx;}
   else{requestAnimationFrame(()=>tlScrollToToday());}
@@ -2119,6 +2151,33 @@ function ttAddProject(name,clientId){
 function ttDeleteProject(id){
   TT.projects=TT.projects.filter(p=>p.id!==id);svTT();render();
 }
+function ttRenameClient(id,newName){
+  if(!newName)return;
+  const c=TT.clients.find(x=>x.id===id);
+  if(c){const oldName=c.name;c.name=newName;
+    // Update entries that reference old client name
+    TT.entries.forEach(e=>{if(e.client===oldName)e.client=newName;});
+  }
+  svTT();render();
+}
+function ttRenameProject(id,newName){
+  if(!newName)return;
+  const p=TT.projects.find(x=>x.id===id);
+  if(p){const oldName=p.name;p.name=newName;
+    // Update entries that reference old project name
+    TT.entries.forEach(e=>{if(e.project===oldName)e.project=newName;});
+  }
+  svTT();render();
+}
+function manageStartEdit(elId,currentVal,saveCallback){
+  const span=document.getElementById(elId);if(!span)return;
+  const input=document.createElement('input');
+  input.type='text';input.value=currentVal;input.className='manage-inline-input';
+  span.replaceWith(input);input.focus();input.select();
+  function save(){const v=input.value.trim();if(v&&v!==currentVal)saveCallback(v);else{const ns=document.createElement('span');ns.className='name';ns.id=elId;ns.textContent=currentVal;input.replaceWith(ns);}render();}
+  input.onblur=save;
+  input.onkeydown=function(e){if(e.key==='Enter')save();if(e.key==='Escape'){const ns=document.createElement('span');ns.className='name';ns.id=elId;ns.textContent=currentVal;input.replaceWith(ns);}};
+}
 function renderManage(){
   const el=document.getElementById('v-manage');if(!el)return;
   ttInitSeedData();
@@ -2136,7 +2195,7 @@ function renderManage(){
   h+=`<div style="max-height:400px;overflow-y:auto">`;
   clients.forEach(c=>{
     const projCnt=projects.filter(p=>p.clientId===c.id).length;
-    h+=`<div class="manage-item"><span class="name">${c.name}</span><span class="sub">${projCnt}件のPJ</span><button class="del-btn" onclick="event.stopPropagation();if(confirm('${c.name}を削除しますか？'))ttDeleteClient('${c.id}')">×</button></div>`;
+    h+=`<div class="manage-item"><span class="name" id="mc_${c.id}">${c.name}</span><button class="manage-edit-btn" onclick="event.stopPropagation();manageStartEdit('mc_${c.id}','${c.name.replace(/'/g,"\\'")}',v=>ttRenameClient('${c.id}',v))" title="名前を編集">&#9998;</button><span class="sub">${projCnt}件のPJ</span><button class="del-btn" onclick="event.stopPropagation();if(confirm('${c.name}を削除しますか？'))ttDeleteClient('${c.id}')">×</button></div>`;
   });
   h+=`</div></div>`;
 
@@ -2151,17 +2210,17 @@ function renderManage(){
     h+=`<div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px 4px;border-top:1px solid var(--border-light);margin-top:4px">${cName}</div>`;
     projs.forEach(p=>{
       const entryCnt=TT.entries.filter(e=>e.project===p.name).length;
-      h+=`<div class="manage-item" style="padding-left:20px"><span class="name">${p.name}</span><span class="sub">${entryCnt}件</span><button class="del-btn" onclick="event.stopPropagation();if(confirm('${p.name.replace(/'/g,"\\'")}を削除しますか？'))ttDeleteProject('${p.id}')">×</button></div>`;
+      h+=`<div class="manage-item" style="padding-left:20px"><span class="name" id="mp_${p.id}">${p.name}</span><button class="manage-edit-btn" onclick="event.stopPropagation();manageStartEdit('mp_${p.id}','${p.name.replace(/'/g,"\\'")}',v=>ttRenameProject('${p.id}',v))" title="名前を編集">&#9998;</button><span class="sub">${entryCnt}件</span><button class="del-btn" onclick="event.stopPropagation();if(confirm('${p.name.replace(/'/g,"\\'")}を削除しますか？'))ttDeleteProject('${p.id}')">×</button></div>`;
     });
   });
   h+=`</div></div>`;
 
-  // 3. Member management — based on TEAM constant with USD rates from Toggl
+  // 3. Member management — based on TEAM constant with JPY rates
   h+=`<div class="manage-card"><h4>メンバー管理 <span class="cnt">${TEAM.length}</span></h4>`;
   h+=`<div style="max-height:400px;overflow-y:auto">`;
   TEAM.forEach(m=>{
     const rate=MEMBER_RATES[m]||0;
-    const rateStr=rate>0?`${rate} USD`:'-';
+    const rateStr=rate>0?`&yen;${rate.toLocaleString()}`:'-';
     const totalSec=TT.entries.filter(e=>e.user===m||fname(e.user)===fname(m)).reduce((s,e)=>s+e.duration,0);
     h+=`<div class="manage-item"><div class="av" style="background:${userColor(m)};color:${userTextColor(m)};width:28px;height:28px;font-size:10px;flex-shrink:0;border:none">${ini(m)}</div><div style="flex:1"><div class="name">${fname(m)}</div><div class="sub">${rateStr}</div></div><span class="sub">${ttFmt(totalSec)}</span></div>`;
   });
@@ -2171,73 +2230,138 @@ function renderManage(){
   el.innerHTML=h;
 }
 
-// ===== RENDER TIMER VIEW =====
-function renderTimer(){
-  const el=document.getElementById('v-timer');if(!el)return;
-  const favColors=['#7c3aed','#22c55e','#3b82f6','#ec4899','#f59e0b','#14b8a6','#ef4444','#6366f1'];
+// renderTimer removed — timer view no longer exists
 
-  el.innerHTML=`<div class="tt-wrap">
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px">
-      <span style="font-size:11px;color:var(--text-3);font-weight:600;line-height:30px;margin-right:4px">FAVORITES</span>
-      ${TT.favs.map((f,i)=>`<div class="tt-fav" onclick="ttUseFav('${f.replace(/'/g,"\\'")}')"><span class="tt-fav-num">${i<9?i+1:''}</span><span class="dot" style="background:${favColors[i%favColors.length]}"></span>${f}</div>`).join('')}
-    </div>
-    ${renderTimerEntries()}
-  </div>`;
-}
+// ===== CALENDAR VIEW STATE =====
+if(!TT.calRange)TT.calRange='week';
+if(!TT.calOffset)TT.calOffset=0;
+if(!TT.calFilterClient)TT.calFilterClient='';
+if(!TT.calFilterProject)TT.calFilterProject='';
 
-function renderTimerEntries(){
-  const entries=ttFilteredEntries().slice(0,50);
-  if(!entries.length)return'<div style="text-align:center;color:var(--text-3);padding:40px">記録がありません</div>';
-  // Group by date
-  const groups={};
-  entries.forEach(e=>{const d=e.startDate||'不明';if(!groups[d])groups[d]=[];groups[d].push(e);});
-  let html='';
-  for(const[date,items]of Object.entries(groups)){
-    const totalSec=items.reduce((s,e)=>s+e.duration,0);
-    html+=`<div style="margin-bottom:20px;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-xs);overflow:hidden;border:1px solid var(--border-light)">
-      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border-light)">
-        <span style="font-weight:700;font-size:13px">${date}</span>
-        <span style="color:var(--text-2);font-size:12px;font-weight:600;margin-left:auto;font-variant-numeric:tabular-nums">${ttFmt(totalSec)}</span>
-      </div>`;
-    items.forEach(e=>{
-      const pc=projColor(e.project||e.task);
-      html+=`<div class="tt-entry-row" style="border-left:3px solid ${pc.main}">
-        <span style="flex:1;font-size:12px;font-weight:500">${e.desc||e.task||'-'}</span>
-        <span style="font-size:11px;padding:2px 10px;border-radius:12px;background:${pc.bg};color:${pc.pbTx};font-weight:500">${e.project||''}</span>
-        <span style="font-size:11px;color:var(--text-3)">${e.client}</span>
-        ${e.billable?'<span style="font-size:9px;color:var(--green-t);font-weight:700">¥</span>':''}
-        <span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;min-width:60px;text-align:right">${ttFmt(e.duration)}</span>
-      </div>`;
-    });
-    html+=`</div>`;
-  }
-  return html;
+function ttCalSetRange(r){TT.calRange=r;TT.calOffset=0;render();}
+function ttCalNav(dir){TT.calOffset+=dir;render();}
+function ttCalReset(){TT.calOffset=0;render();}
+function ttCalSetClient(v){TT.calFilterClient=v;render();}
+function ttCalSetProject(v){TT.calFilterProject=v;render();}
+
+function ttCalFilteredEntries(){
+  let e=ttFilteredEntries();
+  if(TT.calFilterClient)e=e.filter(x=>x.client===TT.calFilterClient);
+  if(TT.calFilterProject)e=e.filter(x=>x.project===TT.calFilterProject);
+  return e;
 }
 
 // ===== RENDER CALENDAR VIEW =====
 function renderCalendar(){
   const el=document.getElementById('v-calendar');if(!el)return;
-  const days=ttWeekDates();
-  const entries=ttFilteredEntries();
-  const weekEntries=entries.filter(e=>days.some(d=>ttDateStr(d)===e.startDate));
-  const totalSec=weekEntries.reduce((s,e)=>s+e.duration,0);
-  const weekNum=Math.ceil(((days[3]-new Date(days[3].getFullYear(),0,1))/86400000+1)/7);
+  const entries=ttCalFilteredEntries();
+  const allEntries=ttFilteredEntries();
+  const clientOpts=[...new Set(allEntries.map(e=>e.client).filter(Boolean))].sort();
+  const projectOpts=[...new Set(allEntries.map(e=>e.project).filter(Boolean))].sort();
+  const favColors=['#7c3aed','#22c55e','#3b82f6','#ec4899','#f59e0b','#14b8a6','#ef4444','#6366f1'];
 
-  const dayNames=['MON','TUE','WED','THU','FRI','SAT','SUN'];
-  const hours=[];for(let h=8;h<=22;h++)hours.push(h);
+  const rangeBtn=(r,l)=>`<button class="tt-rng-btn ${TT.calRange===r?'on':''}" onclick="ttCalSetRange('${r}')">${l}</button>`;
 
-  // Group entries by day
-  const dayEntries={};
-  days.forEach((d,i)=>{dayEntries[i]=weekEntries.filter(e=>e.startDate===ttDateStr(d));});
+  let navHtml=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">`;
+  navHtml+=`<button class="tt-week-nav" onclick="ttCalNav(-1)">&#8249;</button>`;
+  navHtml+=`<button class="tt-week-nav" onclick="ttCalNav(1)">&#8250;</button>`;
 
-  // Build project color bar for the week
+  // Compute period label
+  let periodLabel='';
+  if(TT.calRange==='week'){
+    const days=ttCalWeekDates();
+    const weekNum=Math.ceil(((days[3]-new Date(days[3].getFullYear(),0,1))/86400000+1)/7);
+    periodLabel=`W${weekNum} · ${days[0].getMonth()+1}/${days[0].getDate()} - ${days[6].getMonth()+1}/${days[6].getDate()}`;
+  } else if(TT.calRange==='month'){
+    const now=new Date();
+    const m=new Date(now.getFullYear(),now.getMonth()+TT.calOffset,1);
+    periodLabel=`${m.getFullYear()}年${m.getMonth()+1}月`;
+  } else {
+    const y=new Date().getFullYear()+TT.calOffset;
+    periodLabel=`${y}年`;
+  }
+
+  navHtml+=`<span class="tt-week-label">${periodLabel}</span>`;
+  if(TT.calOffset!==0)navHtml+=`<button class="tt-week-nav" onclick="ttCalReset()" style="font-size:11px">今期</button>`;
+  navHtml+=`<div style="display:flex;gap:1px;background:var(--surface2);border-radius:8px;padding:3px;margin-left:12px;border:1px solid var(--border)">`;
+  navHtml+=rangeBtn('week','週')+rangeBtn('month','月')+rangeBtn('year','年');
+  navHtml+=`</div>`;
+  navHtml+=`<div style="margin-left:auto;display:flex;gap:8px">`;
+  navHtml+=`<select class="tt-filter-sel" onchange="ttCalSetClient(this.value)"><option value="">全クライアント</option>${clientOpts.map(c=>`<option value="${c}" ${TT.calFilterClient===c?'selected':''}>${c}</option>`).join('')}</select>`;
+  navHtml+=`<select class="tt-filter-sel" onchange="ttCalSetProject(this.value)"><option value="">全プロジェクト</option>${projectOpts.map(p=>`<option value="${p}" ${TT.calFilterProject===p?'selected':''}>${p}</option>`).join('')}</select>`;
+  navHtml+=`</div></div>`;
+
+  // Favorites sidebar HTML
+  let sidebarHtml=`<div class="tt-cal-sidebar"><h4>FAVORITES</h4>`;
+  TT.favs.forEach((f,i)=>{
+    sidebarHtml+=`<div class="tt-cal-sidebar-fav" onclick="ttUseFav('${f.replace(/'/g,"\\'")}')"><span class="dot" style="background:${favColors[i%favColors.length]}"></span>${f}</div>`;
+  });
+  sidebarHtml+=`</div>`;
+
+  let mainHtml='';
+
+  if(TT.calRange==='week'){
+    mainHtml=renderCalendarWeek(entries);
+  } else if(TT.calRange==='month'){
+    mainHtml=renderCalendarMonth(entries);
+  } else {
+    mainHtml=renderCalendarYear(entries);
+  }
+
+  // Compute total for period
+  let periodEntries=[];
+  if(TT.calRange==='week'){
+    const days=ttCalWeekDates();
+    periodEntries=entries.filter(e=>days.some(d=>ttDateStr(d)===e.startDate));
+  } else if(TT.calRange==='month'){
+    const now=new Date();const m=new Date(now.getFullYear(),now.getMonth()+TT.calOffset,1);
+    const s=ttDateStr(m);const end=new Date(m.getFullYear(),m.getMonth()+1,0);const en=ttDateStr(end);
+    periodEntries=entries.filter(e=>e.startDate>=s&&e.startDate<=en);
+  } else {
+    const y=new Date().getFullYear()+TT.calOffset;
+    const s=y+'-01-01';const en=y+'-12-31';
+    periodEntries=entries.filter(e=>e.startDate>=s&&e.startDate<=en);
+  }
+  const totalSec=periodEntries.reduce((s,e)=>s+e.duration,0);
+
+  // Project color bar
   const weekProjMap={};
-  weekEntries.forEach(e=>{const p=e.project||'(なし)';weekProjMap[p]=(weekProjMap[p]||0)+e.duration;});
+  periodEntries.forEach(e=>{const p=e.project||'(なし)';weekProjMap[p]=(weekProjMap[p]||0)+e.duration;});
   const weekProjSorted=Object.entries(weekProjMap).sort((a,b)=>b[1]-a[1]);
   const projBarHtml=totalSec>0?`<div class="tt-cal-projbar">${weekProjSorted.map(([p,dur])=>{
     const pc=projColor(p);const pct=Math.max(dur/totalSec*100,2);
     return`<div class="tt-cal-projbar-seg" style="width:${pct}%;background:${pc.main}" title="${p}: ${ttFmt(dur)}"></div>`;
   }).join('')}</div>`:'';
+
+  el.innerHTML=`<div class="tt-wrap">
+    ${navHtml}
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <span class="tt-week-total">TOTAL <strong>${ttFmt(totalSec)}</strong></span>
+    </div>
+    ${projBarHtml}
+    <div class="tt-cal-layout">
+      <div class="tt-cal-main">${mainHtml}</div>
+      ${sidebarHtml}
+    </div>
+  </div>`;
+}
+
+function ttCalWeekDates(){
+  const d=new Date();d.setDate(d.getDate()+TT.calOffset*7);
+  const day=d.getDay();
+  const mon=new Date(d);mon.setDate(d.getDate()-((day+6)%7));
+  const days=[];
+  for(let i=0;i<7;i++){const dd=new Date(mon);dd.setDate(mon.getDate()+i);days.push(dd);}
+  return days;
+}
+
+function renderCalendarWeek(entries){
+  const days=ttCalWeekDates();
+  const weekEntries=entries.filter(e=>days.some(d=>ttDateStr(d)===e.startDate));
+  const dayNames=['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const hours=[];for(let h=8;h<=22;h++)hours.push(h);
+  const dayEntries={};
+  days.forEach((d,i)=>{dayEntries[i]=weekEntries.filter(e=>e.startDate===ttDateStr(d));});
 
   let calHtml=`<div class="tt-cal-hdr" style="border-right:1px solid var(--border-light)"></div>`;
   days.forEach((d,i)=>{
@@ -2249,9 +2373,7 @@ function renderCalendar(){
   hours.forEach(h=>{
     calHtml+=`<div class="tt-cal-time">${h}:00</div>`;
     days.forEach((d,i)=>{
-      // Find entries in this hour (simplified: stack them)
       const hEntries=dayEntries[i].filter((_,idx)=>{
-        // Distribute entries across hours based on index
         const totalForDay=dayEntries[i].length;
         const hourSlot=8+Math.floor(idx/(totalForDay||1)*(hours.length-1));
         return hourSlot===h;
@@ -2268,17 +2390,98 @@ function renderCalendar(){
     });
   });
 
-  el.innerHTML=`<div class="tt-wrap">
-    <div class="tt-week">
-      <button class="tt-week-nav" onclick="TT.weekOffset--;render()">&#8249;</button>
-      <button class="tt-week-nav" onclick="TT.weekOffset++;render()">&#8250;</button>
-      <span class="tt-week-label">W${weekNum} · ${days[0].getMonth()+1}/${days[0].getDate()} - ${days[6].getMonth()+1}/${days[6].getDate()}</span>
-      ${TT.weekOffset!==0?`<button class="tt-week-nav" onclick="TT.weekOffset=0;render()" style="font-size:11px">今週</button>`:''}
-      <span class="tt-week-total">WEEK TOTAL <strong>${ttFmt(totalSec)}</strong></span>
-    </div>
-    ${projBarHtml}
-    <div class="tt-cal">${calHtml}</div>
-  </div>`;
+  return`<div class="tt-cal">${calHtml}</div>`;
+}
+
+function renderCalendarMonth(entries){
+  const now=new Date();
+  const month=new Date(now.getFullYear(),now.getMonth()+TT.calOffset,1);
+  const year=month.getFullYear(),mo=month.getMonth();
+  const firstDay=(new Date(year,mo,1).getDay()+6)%7; // 0=Mon
+  const daysInMonth=new Date(year,mo+1,0).getDate();
+  const daysInPrev=new Date(year,mo,0).getDate();
+  const todayStr=ttDateStr(new Date());
+  const dayNames=['月','火','水','木','金','土','日'];
+
+  // Filter entries for this month
+  const monthStart=ttDateStr(new Date(year,mo,1));
+  const monthEnd=ttDateStr(new Date(year,mo+1,0));
+  const monthEntries=entries.filter(e=>e.startDate>=monthStart&&e.startDate<=monthEnd);
+  const byDate={};
+  monthEntries.forEach(e=>{if(!byDate[e.startDate])byDate[e.startDate]=[];byDate[e.startDate].push(e);});
+
+  let h='';
+  dayNames.forEach(d=>{h+=`<div class="tt-cal-month-hdr">${d}</div>`;});
+
+  // Fill grid: prev month padding + current month + next month padding
+  const totalCells=Math.ceil((firstDay+daysInMonth)/7)*7;
+  for(let i=0;i<totalCells;i++){
+    let dayNum,dateStr,isOtherMonth=false;
+    if(i<firstDay){
+      dayNum=daysInPrev-firstDay+i+1;
+      const prevMonth=new Date(year,mo-1,dayNum);
+      dateStr=ttDateStr(prevMonth);isOtherMonth=true;
+    } else if(i-firstDay>=daysInMonth){
+      dayNum=i-firstDay-daysInMonth+1;
+      const nextMonth=new Date(year,mo+1,dayNum);
+      dateStr=ttDateStr(nextMonth);isOtherMonth=true;
+    } else {
+      dayNum=i-firstDay+1;
+      dateStr=ttDateStr(new Date(year,mo,dayNum));
+    }
+    const isToday=dateStr===todayStr;
+    const dayEntries=byDate[dateStr]||[];
+    const daySec=dayEntries.reduce((s,e)=>s+e.duration,0);
+    const cls=['tt-cal-month-cell'];
+    if(isOtherMonth)cls.push('other-month');
+    if(isToday)cls.push('today-cell');
+
+    h+=`<div class="${cls.join(' ')}">`;
+    h+=`<div class="day-num">${dayNum}</div>`;
+    dayEntries.slice(0,3).forEach(e=>{
+      const pc=projColor(e.project||e.task);
+      h+=`<div class="tt-cal-month-entry" style="background:${pc.bg};border-color:${pc.main};color:${pc.pbTx}">${e.desc||e.task||'-'}</div>`;
+    });
+    if(dayEntries.length>3)h+=`<div style="font-size:9px;color:var(--text-3)">+${dayEntries.length-3}件</div>`;
+    if(daySec>0)h+=`<div class="tt-cal-month-total">${ttFmt(daySec)}</div>`;
+    h+=`</div>`;
+  }
+
+  return`<div class="tt-cal-month">${h}</div>`;
+}
+
+function renderCalendarYear(entries){
+  const y=new Date().getFullYear()+TT.calOffset;
+  const monthNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  let maxSec=0;
+  const monthData=[];
+  for(let m=0;m<12;m++){
+    const s=`${y}-${String(m+1).padStart(2,'0')}-01`;
+    const end=new Date(y,m+1,0);
+    const en=ttDateStr(end);
+    const me=entries.filter(e=>e.startDate>=s&&e.startDate<=en);
+    const totalSec=me.reduce((s,e)=>s+e.duration,0);
+    const billSec=me.filter(e=>e.billable).reduce((s,e)=>s+e.duration,0);
+    const days=new Set(me.map(e=>e.startDate)).size;
+    monthData.push({month:monthNames[m],totalSec,billSec,days,entries:me.length});
+    if(totalSec>maxSec)maxSec=totalSec;
+  }
+
+  let h=`<table><thead><tr><th>月</th><th>合計時間</th><th>Billable</th><th>稼働日数</th><th>エントリ数</th><th style="min-width:200px">工数</th></tr></thead><tbody>`;
+  monthData.forEach(d=>{
+    const pct=maxSec>0?d.totalSec/maxSec*100:0;
+    h+=`<tr>
+      <td style="font-weight:600">${d.month}</td>
+      <td style="font-weight:600;font-variant-numeric:tabular-nums">${ttFmt(d.totalSec)}</td>
+      <td style="font-variant-numeric:tabular-nums">${ttFmt(d.billSec)}</td>
+      <td>${d.days}日</td>
+      <td>${d.entries}件</td>
+      <td><div class="month-bar"><div class="month-bar-fill" style="width:${pct}%"></div></div></td>
+    </tr>`;
+  });
+  h+=`</tbody></table>`;
+
+  return`<div class="tt-cal-year">${h}</div>`;
 }
 
 // ===== REPORT PERIOD & FILTER HELPERS =====
