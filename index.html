@@ -756,6 +756,12 @@ async function apiUpdate(id,updates){
   try{await fetch(API_BASE+'/api/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,updates})});}
   catch(e){console.warn('API update failed',e);}
 }
+async function apiCreate(task){
+  try{
+    const t={...task,assignees:Array.isArray(task.assignees)?task.assignees.join(','):task.assignees||'',stars:String(task.stars||0),hearts:String(task.hearts||0)};
+    await fetch(API_BASE+'/api/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:t})});
+  }catch(e){console.warn('API create failed',e);}
+}
 async function fetchSheet(){
   try{
     const r=await fetch(SHEET_CSV);const text=await r.text();
@@ -1727,7 +1733,12 @@ document.getElementById('mSave').onclick=function(){
     billable:mBillable};
   if(S.editId){const t=ft(S.editId);if(t){Object.assign(t,d);if(S.matrixPos)delete S.matrixPos[t.id];}
     const upd={...d,assignees:(d.assignees||[]).join(','),stars:String(d.stars),hearts:String(d.hearts)};apiUpdate(S.editId,upd);}
-  else{d.id='n'+Date.now();d.group=S.ds==='work'?'Work':'App';d.dataset=S.ds;(S.ds==='work'?S.work:S.app).push(d);}
+  else{
+    d.id='w'+Date.now();d.group='Work';d.dataset='work';
+    S.work.push(d);
+    // Save to Google Sheets via API
+    apiCreate(d);
+  }
   // Sync: if project/client name doesn't exist in TT.clients, add it
   if(proj&&typeof TT!=='undefined'){ttAddClient(proj);}
   sv();closeModal();render();window.scrollTo(0,savedScrollY);

@@ -667,6 +667,34 @@ class HealthHandler(BaseHTTPRequestHandler):
                 self._json(200, {'ok': True})
             except Exception as e:
                 self._json(500, {'error': str(e)})
+        elif self.path == '/api/create':
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+            task = body.get('task', {})
+            if not task.get('id') or not task.get('name'):
+                self._json(400, {'error': 'task.id and task.name required'})
+                return
+            try:
+                row = [
+                    task.get('id', ''),
+                    task.get('name', ''),
+                    task.get('project', ''),
+                    task.get('status', 'todo'),
+                    task.get('date', ''),
+                    task.get('dateStart', ''),
+                    task.get('dateEnd', ''),
+                    ','.join(task.get('assignees', [])) if isinstance(task.get('assignees'), list) else task.get('assignees', ''),
+                    str(task.get('stars', 0)),
+                    str(task.get('hearts', 0)),
+                    task.get('ballOwner', ''),
+                    task.get('notes', ''),
+                    task.get('group', ''),
+                    task.get('dataset', 'work'),
+                ]
+                ws.append_row(row)
+                self._json(200, {'ok': True, 'id': task['id']})
+            except Exception as e:
+                self._json(500, {'error': str(e)})
         elif self.path == '/api/delete':
             length = int(self.headers.get('Content-Length', 0))
             body = json.loads(self.rfile.read(length))
