@@ -361,6 +361,12 @@
   ::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:100px;}::-webkit-scrollbar-thumb:hover{background:var(--text-3);}
   ::selection{background:var(--accent-bg);color:var(--accent);}
 
+  /* ===== TASK TIMER BUTTON ===== */
+  .tt-task-btn{width:26px;height:26px;border:none;border-radius:50%;background:var(--surface);color:var(--accent);font-size:10px;cursor:pointer;transition:all var(--tr);display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-xs);margin-left:auto;flex-shrink:0;}
+  .tt-task-btn:hover{background:var(--accent);color:#fff;transform:scale(1.1);}
+  .tt-task-btn.tracking{background:var(--red);color:#fff;animation:pulse 1.5s ease infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
   /* ===== MODE TABS ===== */
   .mode-tabs{display:flex;gap:2px;}
   .mode-b{padding:5px 16px;border:none;background:none;color:var(--text-3);font-size:13px;font-weight:700;border-radius:7px;cursor:pointer;transition:all var(--tr);font-family:inherit;letter-spacing:-.2px;}
@@ -708,11 +714,13 @@ function sH(t,o={}){
   const baseSty=`background:${col.bg};border-left:3px solid ${col.main};`;
   const sty=baseSty+(o.style||'');
   const extra=o.extra||'';
+  const isTracking=TT.running&&TT.trackingTaskId===t.id;
+  const timerBtn=`<button class="tt-task-btn ${isTracking?'tracking':''}" onclick="event.stopPropagation();ttToggleTask('${t.id}','${(t.name||'').replace(/'/g,"\\'")}','${(t.project||'').replace(/'/g,"\\'")}');" title="${isTracking?'停止':'作業開始'}">${isTracking?'■':'▶'}</button>`;
   return`<div class="s ${cls}" ${dr} ${extra} onclick="openModal('${t.id}')" style="${sty}">
     <div class="s-t">${t.name}</div>${rt}
     <div class="s-m"><span class="pb" style="background:${col.pbBg};color:${col.pbTx}">${t.project}</span>
     ${t.date?`<span style="${ov?'color:var(--red);font-weight:600':td?'color:var(--orange);font-weight:600':''}">${ov?'超過 ':''}${dl(t.date)}</span>`:''}
-    ${avH(t.assignees)}</div></div>`;
+    ${avH(t.assignees)}${timerBtn}</div></div>`;
 }
 
 // Summary
@@ -1663,7 +1671,7 @@ const TT_SHEET_ID='1TUSft9OiHDeftbi3rW9nRPmbjNv3Zz1BH8JysmD-kPE';
 const TT_KEY='rena-tt-v1';
 let TT={
   entries:[],running:false,startTime:0,elapsed:0,
-  desc:'',project:'',client:'',billable:true,
+  desc:'',project:'',client:'',billable:true,trackingTaskId:null,
   weekOffset:0,interval:null,
   filterClient:'',filterProject:'',
   favs:['アプリ制作','既存営業定例','新規営業定例','進捗報告','PJT_工数可視化']
@@ -1726,6 +1734,19 @@ function ttIsToday(d){const t=new Date();return ttDateStr(d)===ttDateStr(t);}
 function ttToggle(){
   if(TT.running)ttStop(); else ttStart();
 }
+function ttToggleTask(taskId,taskName,project){
+  // If already tracking this task → stop
+  if(TT.running&&TT.trackingTaskId===taskId){ttStop();return;}
+  // If tracking something else → stop first, then start new
+  if(TT.running)ttStop();
+  TT.desc=taskName;TT.project=project;TT.trackingTaskId=taskId;
+  // Sync to global bar
+  const descEl=document.getElementById('ttDescGlobal');
+  const projEl=document.getElementById('ttProjectGlobal');
+  if(descEl)descEl.value=taskName;
+  if(projEl)projEl.value=project;
+  ttStartInternal();
+}
 function ttStart(){
   // Read from global bar
   const descEl=document.getElementById('ttDescGlobal');
@@ -1734,9 +1755,13 @@ function ttStart(){
   if(descEl)TT.desc=descEl.value;
   if(projEl)TT.project=projEl.value;
   if(billEl)TT.billable=billEl.checked;
+  TT.trackingTaskId=null;
+  ttStartInternal();
+}
+function ttStartInternal(){
   TT.running=true;TT.startTime=Date.now();TT.elapsed=0;
   TT.interval=setInterval(()=>{TT.elapsed=Math.floor((Date.now()-TT.startTime)/1000);renderTimerClock();},1000);
-  updateTimerUI();
+  updateTimerUI();render();
 }
 function ttStop(){
   clearInterval(TT.interval);TT.running=false;
@@ -1745,7 +1770,7 @@ function ttStop(){
     TT.entries.unshift({user:S.user==='all'?'rena':S.user,email:'',client:TT.client||'StandArrow',project:TT.project||'',task:'',desc:TT.desc||'',billable:TT.billable,startDate:today,endDate:today,duration:TT.elapsed,tags:'',hourlyRate:2000});
     svTT();
   }
-  TT.elapsed=0;TT.desc='';
+  TT.elapsed=0;TT.desc='';TT.trackingTaskId=null;
   const descEl=document.getElementById('ttDescGlobal');
   if(descEl)descEl.value='';
   updateTimerUI();render();
@@ -1763,10 +1788,10 @@ function updateTimerUI(){
   if(dot)dot.style.background=TT.running?'var(--red)':'var(--text-3)';
 }
 function ttUseFav(name){
-  TT.desc=name;
+  TT.desc=name;TT.trackingTaskId=null;
   const descEl=document.getElementById('ttDescGlobal');
   if(descEl)descEl.value=name;
-  ttStart();
+  ttStartInternal();
 }
 
 // Unique projects/clients from entries
