@@ -669,7 +669,9 @@ const SL={todo:'未着手',progress:'進行中',waiting:'先方確認中',done:'
 const USER_COLORS={
   'rena':'#facc15','Ayano Yo':'#4f6af5','OshinoKanako':'#ec4899',
   'Midori Fukihara':'#10b981','Tatsuya Eguchi':'#84cc16',
-  'IihoshiSatsuki':'#f97316','MorishimaChihiro':'#4a7fa5','先方':'#8b5cf6'
+  'IihoshiSatsuki':'#f97316','MorishimaChihiro':'#4a7fa5','先方':'#8b5cf6',
+  'Shun Saito':'#14b8a6','Ami':'#6366f1','Mai':'#d946ef',
+  'Nanarabbit626':'#f472b6','Satoshi Yamashita':'#a78bfa','T19takahashi':'#fb923c'
 };
 const FALLBACK_COLORS=['#8b5cf6','#14b8a6','#6366f1','#d946ef'];
 const DARK_TEXT_USERS=['rena','Tatsuya Eguchi'];
@@ -1622,7 +1624,7 @@ document.getElementById('projAddBtn').onclick=function(){
   document.getElementById('projNewName').value='';
 };
 
-const TEAM=['rena','Ayano Yo','MorishimaChihiro','OshinoKanako','IihoshiSatsuki','Midori Fukihara','Tatsuya Eguchi'];
+const TEAM=['rena','Ayano Yo','OshinoKanako','Midori Fukihara','Tatsuya Eguchi','Shun Saito','Ami','MorishimaChihiro','IihoshiSatsuki','Mai','Nanarabbit626','Satoshi Yamashita','T19takahashi'];
 function populatePeople(selectedAssignees,selectedBall){
   const wrap=document.getElementById('mAssigneeWrap');
   const members=[...TEAM];
@@ -1872,12 +1874,8 @@ function populateTimeFilters(){
 }
 
 function populateUserSelect(){
-  const people=new Set();
-  [...S.work,...S.app].forEach(t=>(t.assignees||[]).forEach(a=>people.add(a)));
-  // Also add time entry users
-  TT.entries.forEach(e=>{if(e.user)people.add(e.user);});
   const sel=document.getElementById('userSelect');
-  sel.innerHTML=`<option value="all">全員</option>`+[...people].sort().map(p=>`<option value="${p}">${fname(p)}</option>`).join('');
+  sel.innerHTML=`<option value="all">全員</option>`+TEAM.map(p=>`<option value="${p}">${fname(p)}</option>`).join('');
   sel.value=S.user;
 }
 document.getElementById('userSelect').onchange=function(){S.user=this.value;S.filters=[];updateHash();render();};
@@ -1932,7 +1930,7 @@ function render(){
 // ===== TIME TRACKER MODULE =====
 // Togglデータが入っているシート (SA-社内PJT) — 後でteam-todoシートに統合可能
 const TT_SHEET_ID='1TUSft9OiHDeftbi3rW9nRPmbjNv3Zz1BH8JysmD-kPE';
-const TT_KEY='rena-tt-v1';
+const TT_KEY='rena-tt-v2';
 let TT={
   entries:[],running:false,startTime:0,elapsed:0,
   desc:'',project:'',client:'',billable:true,trackingTaskId:null,
@@ -2080,10 +2078,17 @@ function ttClients(){
 function ttInitSeedData(){
   if(!TT.clients)TT.clients=[];
   if(!TT.projects)TT.projects=[];
+  // Seed clients from time entries + task projects
   if(TT.clients.length===0){
-    const clientNames=[...new Set(TT.entries.map(e=>e.client).filter(Boolean))];
-    clientNames.forEach(c=>{TT.clients.push({id:'c'+Date.now()+Math.random().toString(36).slice(2,6),name:c});});
+    const clientNames=new Set();
+    TT.entries.forEach(e=>{if(e.client)clientNames.add(e.client);});
+    // Also add task project names as clients (in this system, task "project" = client)
+    [...S.work,...S.app].forEach(t=>{if(t.project)clientNames.add(t.project);});
+    [...clientNames].sort().forEach(c=>{
+      TT.clients.push({id:'c'+Date.now()+Math.random().toString(36).slice(2,6),name:c});
+    });
   }
+  // Seed projects from time entries
   if(TT.projects.length===0){
     const projEntries=[...new Set(TT.entries.map(e=>e.project+'|||'+e.client).filter(x=>x!=='|||'))];
     projEntries.forEach(pe=>{
@@ -2149,12 +2154,12 @@ function renderManage(){
   });
   h+=`</div></div>`;
 
-  // 3. Member management
-  h+=`<div class="manage-card"><h4>メンバー管理 <span class="cnt">${members.length}</span></h4>`;
+  // 3. Member management — based on TEAM constant
+  h+=`<div class="manage-card"><h4>メンバー管理 <span class="cnt">${TEAM.length}</span></h4>`;
   h+=`<div style="max-height:400px;overflow-y:auto">`;
-  members.forEach(m=>{
-    const rate=memberRates[m]||2000;
-    const totalSec=TT.entries.filter(e=>e.user===m).reduce((s,e)=>s+e.duration,0);
+  TEAM.forEach(m=>{
+    const rate=2000;
+    const totalSec=TT.entries.filter(e=>e.user===m||fname(e.user)===fname(m)).reduce((s,e)=>s+e.duration,0);
     h+=`<div class="manage-item"><div class="av" style="background:${userColor(m)};color:${userTextColor(m)};width:28px;height:28px;font-size:10px;flex-shrink:0;border:none">${ini(m)}</div><div style="flex:1"><div class="name">${fname(m)}</div><div class="sub">¥${rate.toLocaleString()}/h</div></div><span class="sub">${ttFmt(totalSec)}</span></div>`;
   });
   h+=`</div></div>`;
