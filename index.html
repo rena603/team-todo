@@ -374,6 +374,9 @@
   .mode-b.on{color:var(--accent);background:var(--accent-bg);}
   .tt-filter-sel{padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);font-size:11px;font-weight:600;font-family:inherit;color:var(--text-2);cursor:pointer;}
   .tt-filter-sel:hover{border-color:var(--accent);}
+  .tt-rng-btn{padding:4px 14px;border:none;background:none;color:var(--text-3);font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;transition:all var(--tr);font-family:inherit;}
+  .tt-rng-btn:hover{color:var(--text-2);}
+  .tt-rng-btn.on{background:var(--surface);color:var(--text);box-shadow:var(--sh-xs);}
 
   /* ===== TIME TRACKER ===== */
   .tt-wrap{padding:20px 28px;max-width:1200px;}
@@ -1897,62 +1900,147 @@ function renderCalendar(){
   </div>`;
 }
 
+// ===== REPORT PERIOD & FILTER HELPERS =====
+if(!TT.rptRange)TT.rptRange='week';
+if(!TT.rptOffset)TT.rptOffset=0;
+if(!TT.rptFilterProject)TT.rptFilterProject='';
+if(!TT.rptFilterTask)TT.rptFilterTask='';
+
+function ttRptSetRange(r){TT.rptRange=r;TT.rptOffset=0;render();}
+function ttRptNav(dir){TT.rptOffset+=dir;render();}
+function ttRptReset(){TT.rptOffset=0;render();}
+function ttRptSetProject(v){TT.rptFilterProject=v;render();}
+function ttRptSetTask(v){TT.rptFilterTask=v;render();}
+
+function ttRptPeriod(){
+  const now=new Date();
+  let start,end,label,bucketFn;
+  if(TT.rptRange==='week'){
+    const d=new Date(now);d.setDate(d.getDate()+TT.rptOffset*7);
+    const day=d.getDay();const mon=new Date(d);mon.setDate(d.getDate()-((day+6)%7));
+    start=new Date(mon);end=new Date(mon);end.setDate(end.getDate()+6);
+    const wn=Math.ceil(((d-new Date(d.getFullYear(),0,1))/86400000+1)/7);
+    label=`W${wn} · ${start.getMonth()+1}/${start.getDate()} - ${end.getMonth()+1}/${end.getDate()}`;
+    bucketFn=e=>e.startDate;
+  } else if(TT.rptRange==='month'){
+    const m=new Date(now.getFullYear(),now.getMonth()+TT.rptOffset,1);
+    start=new Date(m);end=new Date(m.getFullYear(),m.getMonth()+1,0);
+    label=`${m.getFullYear()}年${m.getMonth()+1}月`;
+    bucketFn=e=>e.startDate;
+  } else if(TT.rptRange==='year'){
+    const y=now.getFullYear()+TT.rptOffset;
+    start=new Date(y,0,1);end=new Date(y,11,31);
+    label=`${y}年`;
+    bucketFn=e=>{const d=new Date(e.startDate);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
+  }
+  return{start,end,label,bucketFn};
+}
+
+function ttRptEntries(){
+  const{start,end}=ttRptPeriod();
+  let e=ttFilteredEntries();
+  const s=ttDateStr(start),en=ttDateStr(end);
+  e=e.filter(x=>x.startDate>=s&&x.startDate<=en);
+  if(TT.rptFilterProject)e=e.filter(x=>x.project===TT.rptFilterProject);
+  if(TT.rptFilterTask)e=e.filter(x=>x.task===TT.rptFilterTask);
+  return e;
+}
+
 // ===== RENDER REPORT VIEW =====
 function renderReport(){
   const el=document.getElementById('v-report');if(!el)return;
-  const days=ttWeekDates();
-  const entries=ttFilteredEntries();
-  const weekEntries=entries.filter(e=>days.some(d=>ttDateStr(d)===e.startDate));
+  const{start,end,label,bucketFn}=ttRptPeriod();
+  const rptEntries=ttRptEntries();
+  const allFiltered=ttFilteredEntries(); // for filter dropdown options
 
-  const totalSec=weekEntries.reduce((s,e)=>s+e.duration,0);
-  const billSec=weekEntries.filter(e=>e.billable).reduce((s,e)=>s+e.duration,0);
-  const totalCost=weekEntries.reduce((s,e)=>s+ttCost(e.duration,e.hourlyRate),0);
-  const avgDaily=days.filter(d=>weekEntries.some(e=>e.startDate===ttDateStr(d))).length;
+  const totalSec=rptEntries.reduce((s,e)=>s+e.duration,0);
+  const billSec=rptEntries.filter(e=>e.billable).reduce((s,e)=>s+e.duration,0);
+  const totalCost=rptEntries.reduce((s,e)=>s+ttCost(e.duration,e.hourlyRate),0);
+  const uniqueDays=new Set(rptEntries.map(e=>e.startDate)).size;
+  const avgDaily=uniqueDays?Math.round(totalSec/uniqueDays):0;
 
-  // Duration by day
-  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const dayData=days.map(d=>{
-    const de=weekEntries.filter(e=>e.startDate===ttDateStr(d));
-    const bill=de.filter(e=>e.billable).reduce((s,e)=>s+e.duration,0);
-    const nonBill=de.filter(e=>!e.billable).reduce((s,e)=>s+e.duration,0);
-    return{label:`${dayNames[d.getDay()]} ${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`,bill,nonBill,total:bill+nonBill};
+  // Bar chart data: bucket by period
+  const buckets={};
+  rptEntries.forEach(e=>{
+    const k=bucketFn(e);
+    if(!buckets[k])buckets[k]={bill:0,nonBill:0};
+    if(e.billable)buckets[k].bill+=e.duration; else buckets[k].nonBill+=e.duration;
   });
-  const maxH=Math.max(...dayData.map(d=>d.total),3600)/3600;
 
-  // Client distribution
-  const clientMap={};
-  weekEntries.forEach(e=>{const c=e.client||'(なし)';clientMap[c]=(clientMap[c]||0)+e.duration;});
-  const clientData=Object.entries(clientMap).sort((a,b)=>b[1]-a[1]);
+  // Generate all bucket labels for the period
+  let barData=[];
+  const dayNames=['日','月','火','水','木','金','土'];
+  if(TT.rptRange==='week'){
+    for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+      const k=ttDateStr(d);const b=buckets[k]||{bill:0,nonBill:0};
+      barData.push({label:`${dayNames[d.getDay()]}\n${d.getMonth()+1}/${d.getDate()}`,bill:b.bill,nonBill:b.nonBill,total:b.bill+b.nonBill});
+    }
+  } else if(TT.rptRange==='month'){
+    for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+      const k=ttDateStr(d);const b=buckets[k]||{bill:0,nonBill:0};
+      barData.push({label:`${d.getDate()}`,bill:b.bill,nonBill:b.nonBill,total:b.bill+b.nonBill});
+    }
+  } else if(TT.rptRange==='year'){
+    for(let m=0;m<12;m++){
+      const k=`${start.getFullYear()}-${String(m+1).padStart(2,'0')}`;const b=buckets[k]||{bill:0,nonBill:0};
+      barData.push({label:`${m+1}月`,bill:b.bill,nonBill:b.nonBill,total:b.bill+b.nonBill});
+    }
+  }
+  const maxH=Math.max(...barData.map(d=>d.total),3600)/3600;
+
+  // Project distribution (pie)
+  const projMap={};
+  rptEntries.forEach(e=>{const p=e.project||'(なし)';projMap[p]=(projMap[p]||0)+e.duration;});
+  const projData=Object.entries(projMap).sort((a,b)=>b[1]-a[1]);
   const pieColors=['#7c3aed','#3b82f6','#22c55e','#ec4899','#f59e0b','#14b8a6','#ef4444','#6366f1','#d946ef','#84cc16'];
 
-  // Breakdown by client + project
+  // Breakdown by project + task
   const breakdown={};
-  weekEntries.forEach(e=>{
-    const key=`${e.client||'(なし)'}|||${e.project||'(なし)'}`;
-    if(!breakdown[key])breakdown[key]={client:e.client||'(なし)',project:e.project||'(なし)',duration:0,cost:0};
+  rptEntries.forEach(e=>{
+    const key=`${e.project||'(なし)'}|||${e.task||e.desc||'(なし)'}`;
+    if(!breakdown[key])breakdown[key]={project:e.project||'(なし)',task:e.task||e.desc||'(なし)',duration:0,cost:0};
     breakdown[key].duration+=e.duration;
     breakdown[key].cost+=ttCost(e.duration,e.hourlyRate);
   });
   const bdRows=Object.values(breakdown).sort((a,b)=>b.duration-a.duration);
 
+  // Filter options
+  const projectOpts=[...new Set(allFiltered.map(e=>e.project).filter(Boolean))].sort();
+  const taskOpts=[...new Set(allFiltered.map(e=>e.task).filter(Boolean))].sort();
+
+  const rangeBtn=(r,l)=>`<button class="tt-rng-btn ${TT.rptRange===r?'on':''}" onclick="ttRptSetRange('${r}')">${l}</button>`;
+
   el.innerHTML=`<div class="tt-rpt">
-    <div class="tt-week" style="margin-bottom:20px">
-      <button class="tt-week-nav" onclick="TT.weekOffset--;render()">&#8249;</button>
-      <button class="tt-week-nav" onclick="TT.weekOffset++;render()">&#8250;</button>
-      <span class="tt-week-label">This week · W${Math.ceil(((days[3]-new Date(days[3].getFullYear(),0,1))/86400000+1)/7)}</span>
-      ${TT.weekOffset!==0?`<button class="tt-week-nav" onclick="TT.weekOffset=0;render()" style="font-size:11px">今週</button>`:''}
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <button class="tt-week-nav" onclick="ttRptNav(-1)">&#8249;</button>
+      <button class="tt-week-nav" onclick="ttRptNav(1)">&#8250;</button>
+      <span class="tt-week-label">${label}</span>
+      ${TT.rptOffset!==0?`<button class="tt-week-nav" onclick="ttRptReset()" style="font-size:11px">今期</button>`:''}
+      <div style="display:flex;gap:2px;background:var(--surface2);border-radius:8px;padding:2px;margin-left:12px">
+        ${rangeBtn('week','週')}${rangeBtn('month','月')}${rangeBtn('year','年')}
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <select class="tt-filter-sel" onchange="ttRptSetProject(this.value)">
+          <option value="">全プロジェクト</option>
+          ${projectOpts.map(p=>`<option value="${p}" ${TT.rptFilterProject===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+        <select class="tt-filter-sel" onchange="ttRptSetTask(this.value)">
+          <option value="">全タスク</option>
+          ${taskOpts.map(t=>`<option value="${t}" ${TT.rptFilterTask===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
     </div>
     <div class="tt-rpt-summary">
-      <div class="tt-rpt-card"><h4>Total Hours</h4><div class="val">${ttFmt(totalSec)}</div></div>
-      <div class="tt-rpt-card"><h4>Billable Hours</h4><div class="val">${ttFmt(billSec)} (${totalSec?Math.round(billSec/totalSec*100):0}%)</div></div>
-      <div class="tt-rpt-card"><h4>Amount</h4><div class="val">¥${totalCost.toLocaleString()}</div></div>
-      <div class="tt-rpt-card"><h4>Average Daily</h4><div class="val">${avgDaily?ttFmt(Math.round(totalSec/avgDaily)):'-'}</div></div>
+      <div class="tt-rpt-card"><h4>合計時間</h4><div class="val">${ttFmt(totalSec)}</div></div>
+      <div class="tt-rpt-card"><h4>Billable</h4><div class="val">${ttFmt(billSec)} (${totalSec?Math.round(billSec/totalSec*100):0}%)</div></div>
+      <div class="tt-rpt-card"><h4>コスト</h4><div class="val">¥${totalCost.toLocaleString()}</div></div>
+      <div class="tt-rpt-card"><h4>日平均</h4><div class="val">${avgDaily?ttFmt(avgDaily):'-'}</div></div>
     </div>
     <div class="tt-charts">
       <div class="tt-chart-box">
-        <h4>Duration by day</h4>
-        <div class="tt-bar-chart">
-          ${dayData.map(d=>{
+        <h4>期間別工数</h4>
+        <div class="tt-bar-chart" style="${barData.length>15?'gap:2px':''}">
+          ${barData.map(d=>{
             const bH=maxH>0?d.bill/3600/maxH*180:0;
             const nbH=maxH>0?d.nonBill/3600/maxH*180:0;
             return`<div class="tt-bar-col">
@@ -1961,7 +2049,7 @@ function renderReport(){
                 <div class="tt-bar" style="height:${bH}px;background:var(--accent)"></div>
                 ${nbH>0?`<div class="tt-bar" style="height:${nbH}px;background:var(--pink);border-radius:4px 4px 0 0"></div>`:''}
               </div>
-              <div class="tt-bar-label">${d.label.split(' ')[0]}<br>${d.label.split(' ')[1]}</div>
+              <div class="tt-bar-label" style="${barData.length>15?'font-size:8px':''}">${d.label.replace('\n','<br>')}</div>
             </div>`;
           }).join('')}
         </div>
@@ -1971,29 +2059,31 @@ function renderReport(){
         </div>
       </div>
       <div class="tt-chart-box">
-        <h4>Client distribution</h4>
+        <h4>プロジェクト別分布</h4>
         <div class="tt-pie-wrap">
           <canvas class="tt-pie" id="ttPie" width="180" height="180"></canvas>
           <div class="tt-pie-legend">
-            ${clientData.map(([c,dur],i)=>`<div class="tt-pie-item">
+            ${projData.slice(0,10).map(([p,dur],i)=>`<div class="tt-pie-item">
               <span class="tt-pie-dot" style="background:${pieColors[i%pieColors.length]}"></span>
-              <span>${c}</span>
+              <span>${p}</span>
               <span class="tt-pie-pct">${totalSec?Math.round(dur/totalSec*100):0}%</span>
             </div>`).join('')}
+            ${projData.length>10?`<div class="tt-pie-item" style="color:var(--text-3)">...他${projData.length-10}件</div>`:''}
           </div>
         </div>
       </div>
     </div>
     <div class="tt-breakdown">
       <table>
-        <thead><tr><th>CLIENT / PROJECT</th><th>DURATION</th><th>DURATION %</th><th>AMOUNT</th></tr></thead>
+        <thead><tr><th>プロジェクト / タスク</th><th>時間</th><th>割合</th><th>コスト</th></tr></thead>
         <tbody>
           ${bdRows.map(r=>`<tr>
-            <td><strong>${r.client}</strong> / ${r.project}</td>
+            <td><strong>${r.project}</strong> / ${r.task}</td>
             <td>${ttFmt(r.duration)}</td>
             <td>${totalSec?Math.round(r.duration/totalSec*100):0}%</td>
             <td>¥${r.cost.toLocaleString()}</td>
           </tr>`).join('')}
+          ${bdRows.length===0?'<tr><td colspan="4" style="text-align:center;color:var(--text-3);padding:24px">データがありません</td></tr>':''}
         </tbody>
       </table>
     </div>
@@ -2006,15 +2096,15 @@ function renderReport(){
     const ctx=canvas.getContext('2d');
     const cx=90,cy=90,r=80,ir=50;
     ctx.clearRect(0,0,180,180);
-    if(!clientData.length){ctx.fillStyle='var(--surface2)';ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();return;}
+    if(!projData.length){ctx.fillStyle='#e8ebf0';ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(cx,cy,ir,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();return;}
     let startAngle=-Math.PI/2;
-    clientData.forEach(([,dur],i)=>{
+    projData.forEach(([,dur],i)=>{
       const slice=dur/totalSec*Math.PI*2;
       ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,startAngle,startAngle+slice);ctx.fillStyle=pieColors[i%pieColors.length];ctx.fill();
       startAngle+=slice;
     });
     ctx.beginPath();ctx.arc(cx,cy,ir,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
-    ctx.fillStyle='var(--text)';ctx.font='bold 14px Inter';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle='#1a1d23';ctx.font='bold 14px Inter';ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(ttFmt(totalSec),cx,cy-6);
     ctx.font='10px Inter';ctx.fillStyle='#9da3ae';ctx.fillText('TOTAL',cx,cy+10);
   },50);
