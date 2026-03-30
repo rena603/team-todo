@@ -511,10 +511,6 @@
       <div><label>ステータス</label><select id="mStatus"><option value="todo">未着手</option><option value="progress">進行中</option><option value="waiting">先方確認中</option><option value="done">完了</option></select></div>
       <div><label>期日(Fix Day)</label><input type="date" id="mDate"></div>
     </div>
-    <div class="fr">
-      <div><label>作業開始日</label><input type="date" id="mDateStart"></div>
-      <div><label>作業終了日</label><input type="date" id="mDateEnd"></div>
-    </div>
     <label>担当者</label>
     <div class="ppl-sel" id="mAssigneeWrap"></div>
     <div class="ppl-add"><input type="text" id="mAssigneeNew" placeholder="新規追加"><button type="button" id="mAssigneeAddBtn">+</button></div>
@@ -1407,7 +1403,6 @@ function openModal(id,ds){
     document.getElementById('mName').value=t.name;
     populateProjectSelect(t.project);
     document.getElementById('mStatus').value=sk(t.status);document.getElementById('mDate').value=t.date||'';
-    document.getElementById('mDateStart').value=t.dateStart||'';document.getElementById('mDateEnd').value=t.dateEnd||'';
     populatePeople(t.assignees||[],t.ballOwner||'');
     document.getElementById('mNotes').value=t.notes||'';S.mS=t.stars||0;S.mH=t.hearts||0;
     document.getElementById('mDelete').style.display='block';
@@ -1417,7 +1412,6 @@ function openModal(id,ds){
     populateProjectSelect('');
     document.getElementById('mNotes').value='';
     document.getElementById('mStatus').value=ds||'todo';document.getElementById('mDate').value='';
-    document.getElementById('mDateStart').value='';document.getElementById('mDateEnd').value='';
     populatePeople(['rena'],'');S.mS=0;S.mH=0;
     document.getElementById('mDelete').style.display='none';
   }
@@ -1432,7 +1426,7 @@ document.getElementById('mSave').onclick=function(){
   const projVal=document.getElementById('mProject').value;
   const proj=projVal==='__new__'?document.getElementById('projNewName').value.trim():projVal;
   const d={name:nm,project:proj,status:document.getElementById('mStatus').value,
-    date:document.getElementById('mDate').value,dateStart:document.getElementById('mDateStart').value,dateEnd:document.getElementById('mDateEnd').value,
+    date:document.getElementById('mDate').value,dateStart:'',dateEnd:'',
     assignees:[...document.querySelectorAll('#mAssigneeWrap input:checked')].map(i=>i.value),
     ballOwner:document.getElementById('mBallOwner').value,stars:S.mS,hearts:S.mH,notes:document.getElementById('mNotes').value.trim()};
   if(S.editId){const t=ft(S.editId);if(t){Object.assign(t,d);if(S.matrixPos)delete S.matrixPos[t.id];}
