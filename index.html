@@ -593,14 +593,7 @@
       <button class="ds-b on" data-dataset="work">既存案件</button>
       <button class="ds-b" data-dataset="app">アプリPJT</button>
     </div>
-    <div class="ds" id="timeFilters" style="display:none">
-      <select id="ttClientFilter" class="tt-filter-sel" onchange="TT.filterClient=this.value;render()">
-        <option value="">全クライアント</option>
-      </select>
-      <select id="ttProjectFilter" class="tt-filter-sel" onchange="TT.filterProject=this.value;render()">
-        <option value="">全プロジェクト</option>
-      </select>
-    </div>
+    <div class="ds" id="timeFilters" style="display:none"></div>
     <button class="sync-btn" id="syncBtn" title="スプシと同期">&#x21bb;</button>
     <span class="sync-st" id="syncStatus"></span>
   </div>
@@ -1896,13 +1889,8 @@ document.getElementById('datasetTabs').querySelectorAll('.ds-b').forEach(b=>{
 });
 
 function populateTimeFilters(){
-  const clients=ttClients();
+  // Global header filters removed — each page has its own filters
   const projects=ttProjects();
-  document.getElementById('ttClientFilter').innerHTML=
-    `<option value="">全クライアント</option>`+clients.map(c=>`<option value="${c}" ${TT.filterClient===c?'selected':''}>${c}</option>`).join('');
-  document.getElementById('ttProjectFilter').innerHTML=
-    `<option value="">全プロジェクト</option>`+projects.map(p=>`<option value="${p}" ${TT.filterProject===p?'selected':''}>${p}</option>`).join('');
-  // Also populate global project selector
   document.getElementById('ttProjectGlobal').innerHTML=
     `<option value="">プロジェクト</option>`+projects.map(p=>`<option value="${p}">${p}</option>`).join('');
 }
@@ -2010,8 +1998,6 @@ function ttFilteredEntries(){
     const uname=fname(S.user);
     e=e.filter(x=>x.user===S.user||x.user===uname||fname(x.user)===uname);
   }
-  if(TT.filterClient)e=e.filter(x=>x.client===TT.filterClient);
-  if(TT.filterProject)e=e.filter(x=>x.project===TT.filterProject);
   return e;
 }
 
