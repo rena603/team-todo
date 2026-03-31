@@ -1974,7 +1974,7 @@ function render(){
 // ===== TIME TRACKER MODULE =====
 // Togglデータが入っているシート (SA-社内PJT) — 後でteam-todoシートに統合可能
 const TT_SHEET_ID='1TUSft9OiHDeftbi3rW9nRPmbjNv3Zz1BH8JysmD-kPE';
-const TT_KEY='rena-tt-v2';
+const TT_KEY='rena-tt-v3';
 let TT={
   entries:[],running:false,startTime:0,elapsed:0,
   desc:'',project:'',client:'',billable:true,trackingTaskId:null,
@@ -2117,28 +2117,83 @@ function ttClients(){
   const fromEntries=[...new Set(TT.entries.map(e=>e.client).filter(Boolean))];
   return[...new Set([...managed,...fromEntries])].sort();
 }
+// Full Toggl client→project mapping
+const TOGGL_SEED={
+  'Alink':['SA-tenki.jp','SA-tenki.jp-CREATIVE','SA-登山天気'],
+  'ALL CONNECT':['SA- ALL CONNECT','SA-ALL CONNECT'],
+  'Alpaca':['Alpaca','SA-Alpaca'],
+  'Ama-jack':[],
+  'ANGLERS':['SA-ANGLERS'],
+  'APPANAJ':['SA-Digital Masterpieces GmbH'],
+  'Awarefy':['SA-Awarefy'],
+  'Ayano':['Ayano-Private'],
+  'bajji':[],
+  'BFJ':['SA-BFJ'],
+  'Cellest':['SA-Cellestマーケ','SA-Cellest営業','SA-Cellest広告マネタイズ','SA-WABEマーケ','SA-トキバナマーケ'],
+  'Clueit':['SA-clueit'],
+  'CUBE':['SA-CUBE'],
+  'DD-Inc':['DD-Inc'],
+  'Dearliy':['SA-Dearliy'],
+  'digital-hacks':['SA-digital-hacks'],
+  'DNP':['SA-DNP'],
+  'Double-Down Inc':['SA_野口さんCV支援'],
+  'engate':[],
+  'fancs':[],
+  'FCNT-SOUTH':[],
+  'FLUX':['SA-FLUX'],
+  'FuRyu':['FuRyu_Other','GD-PJ'],
+  'GNTV':[],
+  'HDY ONE':['SA-HDY ONE'],
+  'Japan Travel':['SA-JapanTravel'],
+  'Kanako':['Kanako-Livenow経理業務','Kanako-ToDo'],
+  'LinkSports':[],
+  'LLC':[],
+  'MEC':['SA-MEC'],
+  'Midori':['Midori-engate','Midori-fancs','Midori-UNL'],
+  'On':['SA-On'],
+  'Otonal':['Otonal','Otonal_Data','Otonal_Dem','Otonal_HDY','Otonal_Manage','Otonal_Pub','otonal_入稿','Otonal_制作'],
+  'Rallys':[],
+  'rena':['rena_Private','rena_SubBusiness'],
+  'RICOFUL':['RICOFUL'],
+  'SIRU+':['SA-SIRU+'],
+  'Spoby':[],
+  'StandArrow':['SA-general','SA-InStore広告配信管理','SA- Marketing','SA-REDBOX','SA-その他','SA-営業活動','SA-海外インバウンド','SA-社内PJT','SA-秘書経理業務'],
+  'STOCKPOINT':['SA-STOCKPOINT'],
+  'Strawberry':['SA-Strawberry'],
+  'takumi':['SA - takumi'],
+  'unl':[],
+  'アンバランス':['SA- アンバランス'],
+  'イノベーション':['SA-イノベーション'],
+  'クローバーラボ':['SA-クローバーラボ'],
+  'タイムマシーン':[],
+  'ヒロモリ':['SA-ヒロモリ'],
+  'マーケティングアプリケーションズ':['SA-ポケットアンとケイト'],
+  'ミツカル':['SA-ミツカル'],
+  'ユナイテッドウィル':['SA-社長メシ','SA-社長メシ-CREATIVE'],
+  'ライブナウ':[],
+  'リブセンス':['SA-リブセンス'],
+  'レバレジーズ':['SA-レバレジーズ'],
+  '卓球一般':[],
+  '東北新社':['sa-東北新社'],
+  '東邦ガス':['SA-東邦ガス'],
+};
+
 function ttInitSeedData(){
   if(!TT.clients)TT.clients=[];
   if(!TT.projects)TT.projects=[];
-  // Seed clients from time entries + task projects
   if(TT.clients.length===0){
-    const clientNames=new Set();
-    TT.entries.forEach(e=>{if(e.client)clientNames.add(e.client);});
-    // Also add task project names as clients (in this system, task "project" = client)
-    [...S.work,...S.app].forEach(t=>{if(t.project)clientNames.add(t.project);});
-    [...clientNames].sort().forEach(c=>{
-      TT.clients.push({id:'c'+Date.now()+Math.random().toString(36).slice(2,6),name:c});
+    // Seed from TOGGL_SEED
+    const rid=()=>'c'+Date.now()+Math.random().toString(36).slice(2,8);
+    const pid=()=>'p'+Date.now()+Math.random().toString(36).slice(2,8);
+    Object.entries(TOGGL_SEED).forEach(([client,projs])=>{
+      const cid=rid();
+      TT.clients.push({id:cid,name:client});
+      projs.forEach(p=>{TT.projects.push({id:pid(),name:p,clientId:cid});});
     });
-  }
-  // Seed projects from time entries
-  if(TT.projects.length===0){
-    const projEntries=[...new Set(TT.entries.map(e=>e.project+'|||'+e.client).filter(x=>x!=='|||'))];
-    projEntries.forEach(pe=>{
-      const[proj,client]=pe.split('|||');
-      if(!proj)return;
-      const cl=TT.clients.find(c=>c.name===client);
-      TT.projects.push({id:'p'+Date.now()+Math.random().toString(36).slice(2,6),name:proj,clientId:cl?cl.id:''});
-    });
+    // Also add clients from task data and time entries not in TOGGL_SEED
+    const seedNames=new Set(Object.keys(TOGGL_SEED));
+    [...S.work,...S.app].forEach(t=>{if(t.project&&!seedNames.has(t.project)&&!TT.clients.find(c=>c.name===t.project)){TT.clients.push({id:rid(),name:t.project});}});
+    TT.entries.forEach(e=>{if(e.client&&!TT.clients.find(c=>c.name===e.client)){TT.clients.push({id:rid(),name:e.client});}});
   }
   svTT();
 }
