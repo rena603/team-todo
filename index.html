@@ -1955,7 +1955,7 @@ function loadHash(){
 }
 
 document.getElementById('syncBtn').onclick=async function(){
-  this.classList.add('loading');await Promise.all([fetchSheet(),fetchTimeEntries()]);this.classList.remove('loading');
+  this.classList.add('loading');await Promise.all([fetchSheet(),fetchTimeEntries(),ttFetchClientsFromSheet()]);this.classList.remove('loading');render();
 };
 
 function render(){
@@ -2178,11 +2178,14 @@ const TOGGL_SEED={
   '東邦ガス':['SA-東邦ガス'],
 };
 
-function ttInitSeedData(){
+async function ttInitSeedData(){
   if(!TT.clients)TT.clients=[];
   if(!TT.projects)TT.projects=[];
+  // Try to load from Google Sheets first
+  const loaded=await ttFetchClientsFromSheet();
+  if(loaded&&TT.clients.length>0){render();return;}
+  // If sheet is empty, seed from TOGGL_SEED and push to sheet
   if(TT.clients.length===0){
-    // Seed from TOGGL_SEED
     const rid=()=>'c'+Date.now()+Math.random().toString(36).slice(2,8);
     const pid=()=>'p'+Date.now()+Math.random().toString(36).slice(2,8);
     Object.entries(TOGGL_SEED).forEach(([client,projs])=>{
@@ -2190,62 +2193,96 @@ function ttInitSeedData(){
       TT.clients.push({id:cid,name:client});
       projs.forEach(p=>{TT.projects.push({id:pid(),name:p,clientId:cid});});
     });
-    // Also add clients from task data and time entries not in TOGGL_SEED
     const seedNames=new Set(Object.keys(TOGGL_SEED));
     [...S.work,...S.app].forEach(t=>{if(t.project&&!seedNames.has(t.project)&&!TT.clients.find(c=>c.name===t.project)){TT.clients.push({id:rid(),name:t.project});}});
     TT.entries.forEach(e=>{if(e.client&&!TT.clients.find(c=>c.name===e.client)){TT.clients.push({id:rid(),name:e.client});}});
+    svTT();
+    // Push seed data to sheet
+    ttSyncClientsToSheet();
   }
-  svTT();
 }
 function ttGetClientName(clientId){const c=(TT.clients||[]).find(x=>x.id===clientId);return c?c.name:'';}
+
+// === API for clients/projects (read/write to Google Sheets) ===
+async function ttFetchClientsFromSheet(){
+  try{
+    const[cRes,pRes]=await Promise.all([
+      fetch(API_BASE+'/api/clients').then(r=>r.json()),
+      fetch(API_BASE+'/api/projects').then(r=>r.json())
+    ]);
+    if(Array.isArray(cRes)&&cRes.length>0){TT.clients=cRes;TT.projects=Array.isArray(pRes)?pRes:[];svTT();return true;}
+  }catch(e){console.warn('Fetch clients/projects from sheet failed',e);}
+  return false;
+}
+async function ttSyncClientsToSheet(){
+  try{
+    await Promise.all([
+      fetch(API_BASE+'/api/clients',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'sync',clients:TT.clients})}),
+      fetch(API_BASE+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'sync',projects:TT.projects})})
+    ]);
+  }catch(e){console.warn('Sync clients/projects to sheet failed',e);}
+}
+
 function ttAddClient(name){
   if(!name)return;
   if(!TT.clients)TT.clients=[];
   if(TT.clients.find(c=>c.name===name))return;
-  TT.clients.push({id:'c'+Date.now()+Math.random().toString(36).slice(2,6),name});svTT();render();
+  const id='c'+Date.now()+Math.random().toString(36).slice(2,6);
+  TT.clients.push({id,name});svTT();
+  fetch(API_BASE+'/api/clients',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add',id,name})}).catch(e=>console.warn('API add client failed',e));
+  render();
 }
-// Sync all task project names into TT.clients (called after sheet fetch, etc.)
 function ttSyncClientsFromTasks(){
   if(!TT.clients)TT.clients=[];
   const taskProjects=[...new Set([...S.work,...S.app].map(t=>t.project).filter(Boolean))];
   let changed=false;
   taskProjects.forEach(p=>{
     if(!TT.clients.find(c=>c.name===p)){
-      TT.clients.push({id:'c'+Date.now()+Math.random().toString(36).slice(2,6),name:p});
+      const id='c'+Date.now()+Math.random().toString(36).slice(2,6);
+      TT.clients.push({id,name:p});
       changed=true;
     }
   });
-  if(changed)svTT();
+  if(changed){svTT();ttSyncClientsToSheet();}
 }
 function ttDeleteClient(id){
   TT.clients=TT.clients.filter(c=>c.id!==id);
   TT.projects=TT.projects.filter(p=>p.clientId!==id);
-  svTT();render();
+  svTT();
+  fetch(API_BASE+'/api/clients',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',id})}).catch(e=>console.warn('API delete client failed',e));
+  render();
 }
 function ttAddProject(name,clientId){
   if(!name)return;
-  TT.projects.push({id:'p'+Date.now(),name,clientId:clientId||''});svTT();render();
+  const id='p'+Date.now();
+  TT.projects.push({id,name,clientId:clientId||''});svTT();
+  fetch(API_BASE+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add',id,name,clientId:clientId||''})}).catch(e=>console.warn('API add project failed',e));
+  render();
 }
 function ttDeleteProject(id){
-  TT.projects=TT.projects.filter(p=>p.id!==id);svTT();render();
+  TT.projects=TT.projects.filter(p=>p.id!==id);svTT();
+  fetch(API_BASE+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',id})}).catch(e=>console.warn('API delete project failed',e));
+  render();
 }
 function ttRenameClient(id,newName){
   if(!newName)return;
   const c=TT.clients.find(x=>x.id===id);
   if(c){const oldName=c.name;c.name=newName;
-    // Update entries that reference old client name
     TT.entries.forEach(e=>{if(e.client===oldName)e.client=newName;});
   }
-  svTT();render();
+  svTT();
+  fetch(API_BASE+'/api/clients',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'rename',id,name:newName})}).catch(e=>console.warn('API rename client failed',e));
+  render();
 }
 function ttRenameProject(id,newName){
   if(!newName)return;
   const p=TT.projects.find(x=>x.id===id);
   if(p){const oldName=p.name;p.name=newName;
-    // Update entries that reference old project name
     TT.entries.forEach(e=>{if(e.project===oldName)e.project=newName;});
   }
-  svTT();render();
+  svTT();
+  fetch(API_BASE+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'rename',id,name:newName})}).catch(e=>console.warn('API rename project failed',e));
+  render();
 }
 function manageStartEdit(elId,currentVal,saveCallback){
   const span=document.getElementById(elId);if(!span)return;

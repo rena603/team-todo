@@ -405,6 +405,26 @@ def normalize_project(raw_name):
     return raw_name
 
 
+def get_clients_ws():
+    """clientsシートを取得（なければ作成）"""
+    try:
+        return sh.worksheet('clients')
+    except gspread.exceptions.WorksheetNotFound:
+        cws = sh.add_worksheet(title='clients', rows=200, cols=2)
+        cws.append_row(['id', 'name'])
+        return cws
+
+
+def get_projects_ws():
+    """projectsシートを取得（なければ作成）"""
+    try:
+        return sh.worksheet('projects')
+    except gspread.exceptions.WorksheetNotFound:
+        pws = sh.add_worksheet(title='projects', rows=500, cols=3)
+        pws.append_row(['id', 'name', 'clientId'])
+        return pws
+
+
 def get_routines_ws():
     """routinesシートを取得（なければ作成）"""
     try:
@@ -564,6 +584,37 @@ def notify_bunpo(channel_name, task_label, from_owner, new_owner_key):
 # API + Health check server
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
+        if self.path == '/api/clients':
+            try:
+                cws = get_clients_ws()
+                rows = cws.get_all_values()
+                if len(rows) <= 1:
+                    self._json(200, [])
+                    return
+                hdr = rows[0]
+                clients = []
+                for r in rows[1:]:
+                    if len(r) >= 2 and r[0]:
+                        clients.append({'id': r[0], 'name': r[1] if len(r) > 1 else ''})
+                self._json(200, clients)
+            except Exception as e:
+                self._json(500, {'error': str(e)})
+            return
+        if self.path == '/api/projects':
+            try:
+                pws = get_projects_ws()
+                rows = pws.get_all_values()
+                if len(rows) <= 1:
+                    self._json(200, [])
+                    return
+                projects = []
+                for r in rows[1:]:
+                    if len(r) >= 2 and r[0]:
+                        projects.append({'id': r[0], 'name': r[1] if len(r) > 1 else '', 'clientId': r[2] if len(r) > 2 else ''})
+                self._json(200, projects)
+            except Exception as e:
+                self._json(500, {'error': str(e)})
+            return
         if self.path == '/api/projcolors':
             try:
                 self._json(200, get_proj_colors())
@@ -612,7 +663,93 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.wfile.write(b'OK')
 
     def do_POST(self):
-        if self.path == '/api/update':
+        if self.path == '/api/clients':
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+            action = body.get('action', 'add')
+            try:
+                cws = get_clients_ws()
+                if action == 'add':
+                    cid = body.get('id', 'c' + str(int(datetime.now().timestamp() * 1000)))
+                    name = body.get('name', '')
+                    if not name:
+                        self._json(400, {'error': 'name required'})
+                        return
+                    cws.append_row([cid, name])
+                    self._json(200, {'ok': True, 'id': cid})
+                elif action == 'delete':
+                    cid = body.get('id')
+                    rows = cws.get_all_values()
+                    for i, r in enumerate(rows):
+                        if r and r[0] == cid:
+                            cws.delete_rows(i + 1)
+                            break
+                    self._json(200, {'ok': True})
+                elif action == 'rename':
+                    cid = body.get('id')
+                    new_name = body.get('name', '')
+                    rows = cws.get_all_values()
+                    for i, r in enumerate(rows):
+                        if r and r[0] == cid:
+                            cws.update_cell(i + 1, 2, new_name)
+                            break
+                    self._json(200, {'ok': True})
+                elif action == 'sync':
+                    # Bulk sync: replace all data
+                    clients = body.get('clients', [])
+                    cws.clear()
+                    cws.append_row(['id', 'name'])
+                    if clients:
+                        cws.append_rows([[c['id'], c['name']] for c in clients])
+                    self._json(200, {'ok': True, 'count': len(clients)})
+                else:
+                    self._json(400, {'error': 'unknown action'})
+            except Exception as e:
+                self._json(500, {'error': str(e)})
+        elif self.path == '/api/projects':
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+            action = body.get('action', 'add')
+            try:
+                pws = get_projects_ws()
+                if action == 'add':
+                    pid = body.get('id', 'p' + str(int(datetime.now().timestamp() * 1000)))
+                    name = body.get('name', '')
+                    client_id = body.get('clientId', '')
+                    if not name:
+                        self._json(400, {'error': 'name required'})
+                        return
+                    pws.append_row([pid, name, client_id])
+                    self._json(200, {'ok': True, 'id': pid})
+                elif action == 'delete':
+                    pid = body.get('id')
+                    rows = pws.get_all_values()
+                    for i, r in enumerate(rows):
+                        if r and r[0] == pid:
+                            pws.delete_rows(i + 1)
+                            break
+                    self._json(200, {'ok': True})
+                elif action == 'rename':
+                    pid = body.get('id')
+                    new_name = body.get('name', '')
+                    rows = pws.get_all_values()
+                    for i, r in enumerate(rows):
+                        if r and r[0] == pid:
+                            pws.update_cell(i + 1, 2, new_name)
+                            break
+                    self._json(200, {'ok': True})
+                elif action == 'sync':
+                    projects = body.get('projects', [])
+                    pws.clear()
+                    pws.append_row(['id', 'name', 'clientId'])
+                    if projects:
+                        pws.append_rows([[p['id'], p['name'], p.get('clientId', '')] for p in projects])
+                    self._json(200, {'ok': True, 'count': len(projects)})
+                else:
+                    self._json(400, {'error': 'unknown action'})
+            except Exception as e:
+                self._json(500, {'error': str(e)})
+        elif self.path == '/api/update':
             length = int(self.headers.get('Content-Length', 0))
             body = json.loads(self.rfile.read(length))
             task_id = body.get('id')
