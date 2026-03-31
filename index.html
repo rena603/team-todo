@@ -1182,7 +1182,7 @@ function renderBall(){
 // LIST
 // === LIST VIEW: sort & column filter state ===
 let listSort={col:'date',dir:'asc'};
-let listColFilters={status:[],project:[],ballOwner:[],assignee:[]};
+let listColFilters={status:[],project:[],name:[],stars:[],hearts:[],date:[],ballOwner:[],assignee:[],notes:[]};
 let listOpenMenu=null; // null or column name
 
 function listToggleSort(col,dir){
@@ -1220,8 +1220,13 @@ function renderList(){
   // Column filters (multi-select: empty array = no filter)
   if(listColFilters.status.length)t=t.filter(x=>listColFilters.status.includes(sk(x.status)));
   if(listColFilters.project.length)t=t.filter(x=>listColFilters.project.includes(x.project));
-  if(listColFilters.ballOwner.length)t=t.filter(x=>listColFilters.ballOwner.includes(x.ballOwner));
+  if(listColFilters.name.length)t=t.filter(x=>listColFilters.name.includes(x.name));
+  if(listColFilters.stars.length)t=t.filter(x=>listColFilters.stars.includes(String(x.stars||0)));
+  if(listColFilters.hearts.length)t=t.filter(x=>listColFilters.hearts.includes(String(x.hearts||0)));
+  if(listColFilters.date.length)t=t.filter(x=>listColFilters.date.includes(x.date||'(未設定)'));
+  if(listColFilters.ballOwner.length)t=t.filter(x=>listColFilters.ballOwner.includes(x.ballOwner||'(未設定)'));
   if(listColFilters.assignee.length)t=t.filter(x=>(x.assignees||[]).some(a=>listColFilters.assignee.includes(a)));
+  if(listColFilters.notes.length)t=t.filter(x=>listColFilters.notes.includes(x.notes||'(なし)'));
 
   // Sort
   const dir=listSort.dir==='asc'?1:-1;
@@ -1234,16 +1239,23 @@ function renderList(){
       case'hearts':return dir*((a.hearts||0)-(b.hearts||0));
       case'date':return dir*(new Date(a.date||'2099')-new Date(b.date||'2099'));
       case'ballOwner':return dir*(a.ballOwner||'').localeCompare(b.ballOwner||'');
+      case'assignee':return dir*((a.assignees||[])[0]||'').localeCompare((b.assignees||[])[0]||'');
+      case'notes':return dir*(a.notes||'').localeCompare(b.notes||'');
       default:return 0;
     }
   });
 
-  // Unique values for filter dropdowns
+  // Unique values for filter dropdowns (from unfiltered set)
   const allT=ts().filter(x=>pfMatch(x)&&sfMatch(x));
   const uStatuses=['todo','progress','waiting','done'];
   const uProjects=getProjects();
-  const uBall=[...new Set(allT.map(x=>x.ballOwner).filter(Boolean))].sort();
+  const uNames=[...new Set(allT.map(x=>x.name).filter(Boolean))].sort();
+  const uStars=[...new Set(allT.map(x=>String(x.stars||0)))].sort();
+  const uHearts=[...new Set(allT.map(x=>String(x.hearts||0)))].sort();
+  const uDates=[...new Set(allT.map(x=>x.date||'(未設定)'))].sort();
+  const uBall=[...new Set(allT.map(x=>x.ballOwner||'(未設定)'))].sort();
   const uAssignees=[...new Set(allT.flatMap(x=>x.assignees||[]))].sort();
+  const uNotes=[...new Set(allT.map(x=>x.notes||'(なし)'))].sort();
 
   // Column header with dropdown builder
   function colHeader(col,label,vals,labelFn){
@@ -1282,13 +1294,13 @@ function renderList(){
       <tr>
         <th>${colHeader('status','ステータス',uStatuses,k=>SL[k])}</th>
         <th>${colHeader('project','クライアント',uProjects)}</th>
-        <th class="lt-sortable" onclick="listToggleSort('name')">タスク ${listSort.col==='name'?(listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'<span class="lt-sort">⇅</span>'}</th>
-        <th class="lt-sortable" onclick="listToggleSort('stars')">★ ${listSort.col==='stars'?(listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'<span class="lt-sort">⇅</span>'}</th>
-        <th class="lt-sortable" onclick="listToggleSort('hearts')">♡ ${listSort.col==='hearts'?(listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'<span class="lt-sort">⇅</span>'}</th>
-        <th class="lt-sortable" onclick="listToggleSort('date')">期日 ${listSort.col==='date'?(listSort.dir==='asc'?'<span class="lt-sort on">↑</span>':'<span class="lt-sort on">↓</span>'):'<span class="lt-sort">⇅</span>'}</th>
-        <th>${colHeader('ballOwner','ボール',uBall,fname)}</th>
+        <th>${colHeader('name','タスク',uNames)}</th>
+        <th>${colHeader('stars','★',uStars,v=>v==='0'?'-':'★'.repeat(Number(v)))}</th>
+        <th>${colHeader('hearts','♡',uHearts,v=>v==='0'?'-':'♡'.repeat(Number(v)))}</th>
+        <th>${colHeader('date','期日',uDates)}</th>
+        <th>${colHeader('ballOwner','ボール',uBall,v=>v==='(未設定)'?v:fname(v))}</th>
         <th>${colHeader('assignee','担当',uAssignees,fname)}</th>
-        <th>メモ</th>
+        <th>${colHeader('notes','メモ',uNotes)}</th>
       </tr>
     </thead>
     <tbody>${t.map(x=>{const ov=isO(x.date),td=isT(x.date);
