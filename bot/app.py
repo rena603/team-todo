@@ -584,6 +584,24 @@ def notify_bunpo(channel_name, task_label, from_owner, new_owner_key):
 # API + Health check server
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
+        if self.path == '/api/tasks':
+            try:
+                rows = ws.get_all_values()
+                if len(rows) <= 1:
+                    self._json(200, [])
+                    return
+                hdr = rows[0]
+                tasks = []
+                for r in rows[1:]:
+                    if len(r) >= 2 and r[0]:
+                        t = {}
+                        for j, col in enumerate(hdr):
+                            t[col] = r[j] if j < len(r) else ''
+                        tasks.append(t)
+                self._json(200, tasks)
+            except Exception as e:
+                self._json(500, {'error': str(e)})
+            return
         if self.path == '/api/clients':
             try:
                 cws = get_clients_ws()

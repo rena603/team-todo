@@ -764,16 +764,23 @@ async function apiCreate(task){
 }
 async function fetchSheet(){
   try{
-    const r=await fetch(SHEET_CSV);const text=await r.text();
-    const csv=parseCSV(text);if(!csv.length)return;
-    const hdr=csv[0],rows=[];
-    for(let i=1;i<csv.length;i++){if(csv[i].length>=2)rows.push(row2task(csv[i],hdr));}
+    const r=await fetch(API_BASE+'/api/tasks');
+    if(!r.ok)throw new Error('API returned '+r.status);
+    const tasks=await r.json();
+    if(!Array.isArray(tasks))throw new Error('unexpected response');
+    const rows=tasks.map(t=>({
+      id:t.id||'',name:t.name||'',project:t.project||'',status:t.status||'',
+      date:t.date||'',dateStart:t.dateStart||'',dateEnd:t.dateEnd||'',
+      assignees:t.assignees?t.assignees.split(',').map(s=>s.trim()).filter(Boolean):[],
+      stars:parseInt(t.stars)||0,hearts:parseInt(t.hearts)||0,
+      ballOwner:t.ballOwner||'',notes:t.notes||'',group:t.group||'',dataset:t.dataset||'',
+      billable:t.billable===''||t.billable===undefined?true:t.billable!=='false'}));
     S.work=rows.filter(t=>t.dataset==='work');
     S.app=rows.filter(t=>t.dataset==='app');
     sv();if(typeof TT!=='undefined')ttSyncClientsFromTasks();render();
     document.getElementById('syncStatus').textContent='synced';
     setTimeout(()=>{document.getElementById('syncStatus').textContent='';},2000);
-  }catch(e){console.warn('Sheet fetch failed, using cache',e);}
+  }catch(e){console.warn('API fetch failed, using cache',e);}
 }
 
 function ld(){const s=localStorage.getItem(KEY);if(s){const p=JSON.parse(s);S.work=p.work||[];S.app=p.app||[];}}
