@@ -856,7 +856,8 @@ function getProjects(){
   const fromTTClients=(typeof TT!=='undefined'&&TT.clients||[]).map(c=>c.name);
   return[...new Set([...fromTTClients,...fromTasks])].sort();
 }
-function getAllPeople(){const p=new Set();allTasks().forEach(t=>{(t.assignees||[]).forEach(a=>p.add(a));if(t.ballOwner&&t.ballOwner.trim())p.add(t.ballOwner.trim());});return[...p].sort();}
+function sortByTaskCount(arr){const cnt=m=>allTasks().filter(t=>(t.assignees||[]).includes(m)).length;return arr.sort((a,b)=>cnt(b)-cnt(a));}
+function getAllPeople(){const p=new Set();allTasks().forEach(t=>{(t.assignees||[]).forEach(a=>p.add(a));if(t.ballOwner&&t.ballOwner.trim())p.add(t.ballOwner.trim());});return sortByTaskCount([...p]);}
 
 window.toggleDone=function(e,id){
   e.stopPropagation();const t=ft(id);if(!t)return;
@@ -1189,7 +1190,7 @@ function renderBall(){
   // Group active tasks by ballOwner
   const g={};ppl.forEach(p=>g[p]=[]);
   t.forEach(x=>{const o=(x.ballOwner||'').trim()||(x.assignees&&x.assignees.length?x.assignees[0].trim():'')||'未設定';if(!g[o])g[o]=[];g[o].push(x);});
-  const ks=Object.keys(g).sort((a,b)=>{if(a==='未設定')return 1;if(b==='未設定')return-1;if(a==='先方')return-1;if(b==='先方')return 1;return a.localeCompare(b);});
+  const ks=Object.keys(g).sort((a,b)=>{if(a==='未設定')return 1;if(b==='未設定')return-1;if(a==='先方')return-1;if(b==='先方')return 1;const cnt=m=>allTasks().filter(x=>(x.assignees||[]).includes(m)).length;return cnt(b)-cnt(a);});
   document.getElementById('v-ball').innerHTML=`<div class="bl-v">${ks.map((k,i)=>{
     const items=g[k].sort((a,b)=>new Date(a.date||'2099')-new Date(b.date||'2099'));
     const oc=items.filter(x=>isO(x.date)).length,tc=items.filter(x=>isT(x.date)).length;
@@ -1275,8 +1276,8 @@ function renderList(){
   const uStars=[...new Set(allT.map(x=>String(x.stars||0)))].sort();
   const uHearts=[...new Set(allT.map(x=>String(x.hearts||0)))].sort();
   const uDates=[...new Set(allT.map(x=>x.date||'(未設定)'))].sort();
-  const uBall=[...new Set(allT.map(x=>x.ballOwner||'(未設定)'))].sort();
-  const uAssignees=[...new Set(allT.flatMap(x=>x.assignees||[]))].sort();
+  const uBall=sortByTaskCount([...new Set(allT.map(x=>x.ballOwner||'(未設定)').filter(x=>x!=='(未設定)'))]);uBall.push('(未設定)');
+  const uAssignees=sortByTaskCount([...new Set(allT.flatMap(x=>x.assignees||[]))]);
   const uNotes=[...new Set(allT.map(x=>x.notes||'(なし)'))].sort();
 
   // Column header with dropdown builder
@@ -1941,7 +1942,7 @@ function populateTimeFilters(){
 
 function populateUserSelect(){
   const sel=document.getElementById('userSelect');
-  sel.innerHTML=`<option value="all">全員</option>`+TEAM.map(p=>`<option value="${p}">${fname(p)}</option>`).join('');
+  sel.innerHTML=`<option value="all">全員</option>`+sortByTaskCount([...TEAM]).map(p=>`<option value="${p}">${fname(p)}</option>`).join('');
   sel.value=S.user;
 }
 document.getElementById('userSelect').onchange=function(){S.user=this.value;S.filters=[];updateHash();render();};
@@ -2344,8 +2345,7 @@ function renderManage(){
   h+=`</div></div>`;
 
   // 3. Member management — based on TEAM constant with JPY rates
-  const taskCount=m=>{const all=allTasks();return all.filter(t=>(t.assignees||[]).includes(m)).length;};
-  const teamSorted=[...TEAM].sort((a,b)=>taskCount(b)-taskCount(a));
+  const teamSorted=sortByTaskCount([...TEAM]);
   h+=`<div class="manage-card"><h4>メンバー管理 <span class="cnt">${TEAM.length}</span></h4>`;
   h+=`<div style="max-height:400px;overflow-y:auto">`;
   teamSorted.forEach(m=>{
