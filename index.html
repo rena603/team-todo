@@ -406,6 +406,10 @@
   ::selection{background:var(--accent-bg);color:var(--accent);}
 
   /* ===== TASK TIMER BUTTON ===== */
+  .s-done-btn{width:22px;height:22px;border:2px solid var(--border);border-radius:50%;background:var(--surface);cursor:pointer;transition:all var(--tr);display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.7;font-size:0;line-height:0;}
+  .s-done-btn:hover{border-color:var(--green);background:var(--green-bg);opacity:1;transform:scale(1.1);}
+  .s-done-btn.is-done{border-color:var(--green);background:var(--green);opacity:1;}
+  .s-done-btn.is-done::after{content:'✓';font-size:11px;font-weight:700;color:#fff;}
   .tt-task-btn{width:22px;height:22px;border:none;border-radius:50%;background:var(--surface);color:var(--accent);font-size:9px;cursor:pointer;transition:all var(--tr);display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-xs);margin-left:auto;flex-shrink:0;opacity:.7;}
   .tt-task-btn:hover{background:var(--accent);color:#fff;transform:scale(1.1);opacity:1;}
   .tt-task-btn.tracking{background:var(--red);color:#fff;animation:pulse 1.5s ease infinite;box-shadow:0 0 8px rgba(239,68,68,.45);opacity:1;}
@@ -850,6 +854,11 @@ function getProjects(){
 }
 function getAllPeople(){const p=new Set();allTasks().forEach(t=>{(t.assignees||[]).forEach(a=>p.add(a));if(t.ballOwner&&t.ballOwner.trim())p.add(t.ballOwner.trim());});return[...p].sort();}
 
+window.toggleDone=function(e,id){
+  e.stopPropagation();const t=ft(id);if(!t)return;
+  t.status=sk(t.status)==='done'?'todo':'done';
+  sv();render();apiUpdate(id,{status:t.status});
+};
 function sH(t,o={}){
   const td=isT(t.date),ov=isO(t.date);
   const col=getProjColor(t.project);
@@ -862,13 +871,15 @@ function sH(t,o={}){
   const sty=baseSty+(o.style||'');
   const extra=o.extra||'';
   const isTracking=TT.running&&TT.trackingTaskId===t.id;
+  const isDone=sk(t.status)==='done';
   const billableIcon=t.billable!==false?`<span class="s-billable" title="稼働">¥</span>`:`<span class="s-billable non" title="非稼働">-</span>`;
+  const doneBtn=`<button class="s-done-btn ${isDone?'is-done':''}" onclick="toggleDone(event,'${t.id}')" title="${isDone?'未完了に戻す':'完了'}"></button>`;
   const timerBtn=`<button class="tt-task-btn ${isTracking?'tracking':''}" onclick="event.stopPropagation();ttToggleTask('${t.id}','${(t.name||'').replace(/'/g,"\\'")}','${(t.project||'').replace(/'/g,"\\'")}');" title="${isTracking?'停止':'作業開始'}">${isTracking?'■':'▶'}</button>`;
   return`<div class="s ${cls}" ${dr} ${extra} onclick="openModal('${t.id}')" style="${sty}">
     <div class="s-t">${t.name}</div>${rt}
     <div class="s-m"><span class="pb" style="background:${col.pbBg};color:${col.pbTx}">${t.project}</span>
     ${t.date?`<span style="${ov?'color:var(--red);font-weight:600':td?'color:var(--orange);font-weight:600':''}">${ov?'超過 ':''}${dl(t.date)}</span>`:''}
-    ${billableIcon}${avH(t.assignees)}${timerBtn}</div></div>`;
+    ${billableIcon}${avH(t.assignees)}${doneBtn}${timerBtn}</div></div>`;
 }
 
 // Summary
