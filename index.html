@@ -2255,24 +2255,15 @@ function ttAddClient(name){
   render();
 }
 function ttSyncClientsFromTasks(){
-  if(!TT.clients)TT.clients=[];
-  const taskProjects=[...new Set([...S.work,...S.app].map(t=>t.project).filter(Boolean))];
-  let changed=false;
-  taskProjects.forEach(p=>{
-    if(!TT.clients.find(c=>c.name===p)){
-      const id='c'+Date.now()+Math.random().toString(36).slice(2,6);
-      TT.clients.push({id,name:p});
-      changed=true;
-    }
-  });
-  if(changed){svTT();ttSyncClientsToSheet();}
+  // クライアント/プロジェクトは管理画面から明示的に追加・削除する
+  // タスクのproject名からの自動追加は行わない（削除しても復活する原因になるため）
 }
-function ttDeleteClient(id){
+async function ttDeleteClient(id){
   TT.clients=TT.clients.filter(c=>c.id!==id);
   TT.projects=TT.projects.filter(p=>p.clientId!==id);
-  svTT();
-  fetch(API_BASE+'/api/clients',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',id})}).catch(e=>console.warn('API delete client failed',e));
-  render();
+  svTT();render();
+  try{await fetch(API_BASE+'/api/clients',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',id})});
+    await ttFetchClientsFromSheet();}catch(e){console.warn('API delete client failed',e);}
 }
 function ttAddProject(name,clientId){
   if(!name)return;
@@ -2281,10 +2272,10 @@ function ttAddProject(name,clientId){
   fetch(API_BASE+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add',id,name,clientId:clientId||''})}).catch(e=>console.warn('API add project failed',e));
   render();
 }
-function ttDeleteProject(id){
-  TT.projects=TT.projects.filter(p=>p.id!==id);svTT();
-  fetch(API_BASE+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',id})}).catch(e=>console.warn('API delete project failed',e));
-  render();
+async function ttDeleteProject(id){
+  TT.projects=TT.projects.filter(p=>p.id!==id);svTT();render();
+  try{await fetch(API_BASE+'/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',id})});
+    await ttFetchClientsFromSheet();}catch(e){console.warn('API delete project failed',e);}
 }
 function ttRenameClient(id,newName){
   if(!newName)return;
