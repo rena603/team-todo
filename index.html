@@ -1690,13 +1690,14 @@ const TEAM=['Ami','Ayano Yo','MorishimaChihiro','OshinoKanako','Mai','Midori Fuk
 const MEMBER_RATES={'Ami':2200,'Ayano Yo':2200,'MorishimaChihiro':2000,'OshinoKanako':2200,'Mai':2200,'Midori Fukihara':2200,'Nanarabbit626':2200,'rena':2000,'Satoshi Yamashita':2000,'IihoshiSatsuki':1500,'Shun Saito':2000,'T19takahashi':2200,'Tatsuya Eguchi':0,'杉本':2200};
 function populatePeople(selectedAssignees,selectedBall){
   const wrap=document.getElementById('mAssigneeWrap');
-  const members=[...TEAM];
+  const members=sortByTaskCount([...TEAM]);
   selectedAssignees.forEach(a=>{if(!members.includes(a))members.push(a);});
   wrap.innerHTML=members.map(p=>`<label><input type="checkbox" value="${p}"${selectedAssignees.includes(p)?' checked':''} onchange="updateAssigneeTags()">${fname(p)}</label>`).join('');
   const ballPpl=new Set([...members,'先方']);
   allTasks().forEach(t=>{if(t.ballOwner&&t.ballOwner.trim())ballPpl.add(t.ballOwner.trim());});
   const sel=document.getElementById('mBallOwner');
-  sel.innerHTML=`<option value="">未設定</option>`+[...ballPpl].sort((a,b)=>{if(a==='先方')return-1;if(b==='先方')return 1;return a.localeCompare(b);}).map(p=>`<option value="${p}">${p==='先方'?'先方':fname(p)}</option>`).join('');
+  const ballSorted=sortByTaskCount([...ballPpl].filter(x=>x!=='先方'));ballSorted.unshift('先方');
+  sel.innerHTML=`<option value="">未設定</option>`+ballSorted.map(p=>`<option value="${p}">${p==='先方'?'先方':fname(p)}</option>`).join('');
   sel.value=selectedBall;
   updateAssigneeTags();
 }
