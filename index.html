@@ -2353,9 +2353,11 @@ function renderManage(){
   h+=`</div></div>`;
 
   // 3. Member management — based on TEAM constant with JPY rates
+  const taskCount=m=>{const all=allTasks();return all.filter(t=>(t.assignees||[]).includes(m)).length;};
+  const teamSorted=[...TEAM].sort((a,b)=>taskCount(b)-taskCount(a));
   h+=`<div class="manage-card"><h4>メンバー管理 <span class="cnt">${TEAM.length}</span></h4>`;
   h+=`<div style="max-height:400px;overflow-y:auto">`;
-  TEAM.forEach(m=>{
+  teamSorted.forEach(m=>{
     const rate=MEMBER_RATES[m]||0;
     const rateStr=rate>0?`&yen;${rate.toLocaleString()}`:'-';
     const totalSec=TT.entries.filter(e=>e.user===m||fname(e.user)===fname(m)).reduce((s,e)=>s+e.duration,0);
