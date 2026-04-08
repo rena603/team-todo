@@ -409,9 +409,11 @@
 
   /* ===== TASK TIMER BUTTON ===== */
   .s-done-btn{width:18px;height:18px;border:2px solid var(--border);border-radius:4px;background:var(--surface);cursor:pointer;transition:all var(--tr);display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.7;font-size:0;line-height:0;}
+  .s-done-btn::after{content:'✓';font-size:11px;font-weight:700;color:var(--border);transition:color var(--tr);}
   .s-done-btn:hover{border-color:var(--green);background:var(--green-bg);opacity:1;transform:scale(1.05);}
+  .s-done-btn:hover::after{color:var(--green);}
   .s-done-btn.is-done{border-color:var(--green);background:var(--green);opacity:1;}
-  .s-done-btn.is-done::after{content:'✓';font-size:11px;font-weight:700;color:#fff;}
+  .s-done-btn.is-done::after{color:#fff;}
   .tt-task-btn{width:22px;height:22px;border:none;border-radius:50%;background:var(--surface);color:var(--accent);font-size:9px;cursor:pointer;transition:all var(--tr);display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-xs);margin-left:auto;flex-shrink:0;opacity:.7;}
   .tt-task-btn:hover{background:var(--accent);color:#fff;transform:scale(1.1);opacity:1;}
   .tt-task-btn.tracking{background:var(--red);color:#fff;animation:pulse 1.5s ease infinite;box-shadow:0 0 8px rgba(239,68,68,.45);opacity:1;}
