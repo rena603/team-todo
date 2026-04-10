@@ -26,6 +26,34 @@ gc = gspread.authorize(creds)
 sh = gc.open_by_key(SHEET_ID)
 ws = sh.sheet1
 
+# Thread lock for gspread operations (gspread is not thread-safe)
+_sheet_lock = threading.Lock()
+
+# Refreshable gspread client
+_gc_lock = threading.Lock()
+_gc_state = {'client': gc, 'refreshed_at': datetime.now()}
+GC_REFRESH_INTERVAL = timedelta(minutes=30)
+
+
+def _get_gc():
+    """Get a gspread client, re-authorizing if stale."""
+    global gc, sh, ws
+    with _gc_lock:
+        now = datetime.now()
+        if now - _gc_state['refreshed_at'] > GC_REFRESH_INTERVAL:
+            gc = gspread.authorize(creds)
+            sh = gc.open_by_key(SHEET_ID)
+            ws = sh.sheet1
+            _gc_state['client'] = gc
+            _gc_state['refreshed_at'] = now
+            print(f'[gspread] Re-authorized at {now}')
+        return _gc_state['client']
+
+
+def get_tasks_ws():
+    """Get a fresh worksheet reference for the tasks sheet."""
+    return _get_gc().open_by_key(SHEET_ID).sheet1
+
 NAME_MAP = {
     'rena': 'rena',
     'ayano': 'Ayano Yo',
@@ -586,7 +614,9 @@ class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/api/tasks':
             try:
-                rows = ws.get_all_values()
+                with _sheet_lock:
+                    task_ws = get_tasks_ws()
+                    rows = task_ws.get_all_values()
                 if len(rows) <= 1:
                     self._json(200, [])
                     return
@@ -600,12 +630,14 @@ class HealthHandler(BaseHTTPRequestHandler):
                         tasks.append(t)
                 self._json(200, tasks)
             except Exception as e:
+                print(f'[API /api/tasks] ERROR: {e}')
                 self._json(500, {'error': str(e)})
             return
         if self.path == '/api/clients':
             try:
-                cws = get_clients_ws()
-                rows = cws.get_all_values()
+                with _sheet_lock:
+                    cws = get_clients_ws()
+                    rows = cws.get_all_values()
                 if len(rows) <= 1:
                     self._json(200, [])
                     return
@@ -616,12 +648,14 @@ class HealthHandler(BaseHTTPRequestHandler):
                         clients.append({'id': r[0], 'name': r[1] if len(r) > 1 else ''})
                 self._json(200, clients)
             except Exception as e:
+                print(f'[API /api/clients] ERROR: {e}')
                 self._json(500, {'error': str(e)})
             return
         if self.path == '/api/projects':
             try:
-                pws = get_projects_ws()
-                rows = pws.get_all_values()
+                with _sheet_lock:
+                    pws = get_projects_ws()
+                    rows = pws.get_all_values()
                 if len(rows) <= 1:
                     self._json(200, [])
                     return
@@ -631,6 +665,7 @@ class HealthHandler(BaseHTTPRequestHandler):
                         projects.append({'id': r[0], 'name': r[1] if len(r) > 1 else '', 'clientId': r[2] if len(r) > 2 else ''})
                 self._json(200, projects)
             except Exception as e:
+                print(f'[API /api/projects] ERROR: {e}')
                 self._json(500, {'error': str(e)})
             return
         if self.path == '/api/projcolors':
@@ -776,19 +811,26 @@ class HealthHandler(BaseHTTPRequestHandler):
                 self._json(400, {'error': 'id and updates required'})
                 return
             try:
-                row_num = find_row_by_id(task_id)
-                if not row_num:
-                    self._json(404, {'error': f'task {task_id} not found'})
-                    return
-                # ballOwner変更検知用: 更新前の値を取得
-                old_ball = ''
-                if 'ballOwner' in updates:
-                    row_data = ws.row_values(row_num)
-                    old_ball = (row_data[COL_MAP['ballOwner'] - 1] if len(row_data) >= COL_MAP['ballOwner'] else '').strip()
-                for field, value in updates.items():
-                    col_num = COL_MAP.get(field)
-                    if col_num:
-                        ws.update_cell(row_num, col_num, str(value))
+                with _sheet_lock:
+                    task_ws = get_tasks_ws()
+                    rows = task_ws.get_all_values()
+                    row_num = None
+                    for i, r in enumerate(rows):
+                        if r and r[0] == task_id:
+                            row_num = i + 1
+                            break
+                    if not row_num:
+                        self._json(404, {'error': f'task {task_id} not found'})
+                        return
+                    # ballOwner変更検知用: 更新前の値を取得
+                    old_ball = ''
+                    if 'ballOwner' in updates:
+                        row_data = task_ws.row_values(row_num)
+                        old_ball = (row_data[COL_MAP['ballOwner'] - 1] if len(row_data) >= COL_MAP['ballOwner'] else '').strip()
+                    for field, value in updates.items():
+                        col_num = COL_MAP.get(field)
+                        if col_num:
+                            task_ws.update_cell(row_num, col_num, str(value))
                 # ballOwner変更時に分報チャンネルへ通知
                 new_ball = updates.get('ballOwner', '').strip()
                 print(f"[api/update] task={task_id} ballOwner in updates={'ballOwner' in updates} old='{old_ball}' new='{new_ball}'")
@@ -796,7 +838,9 @@ class HealthHandler(BaseHTTPRequestHandler):
                     print(f"[ball_change] '{old_ball}' -> '{new_ball}' (task {task_id})")
                     channel_name = BUNPO_CHANNEL.get(new_ball)
                     if channel_name:
-                        row_data = ws.row_values(row_num)
+                        with _sheet_lock:
+                            task_ws = get_tasks_ws()
+                            row_data = task_ws.row_values(row_num)
                         task_name = row_data[COL_MAP['name'] - 1] if len(row_data) >= COL_MAP['name'] else task_id
                         project = row_data[COL_MAP['project'] - 1] if len(row_data) >= COL_MAP['project'] else ''
                         label = f"[{project}] {task_name}" if project else task_name
@@ -808,6 +852,7 @@ class HealthHandler(BaseHTTPRequestHandler):
                     print(f"[ball_change] SKIPPED: same value or empty (old='{old_ball}' new='{new_ball}')")
                 self._json(200, {'ok': True, 'row': row_num, 'updates': updates})
             except Exception as e:
+                print(f'[API /api/update] ERROR: {e}')
                 self._json(500, {'error': str(e)})
         elif self.path == '/api/projcolors':
             length = int(self.headers.get('Content-Length', 0))
@@ -846,9 +891,12 @@ class HealthHandler(BaseHTTPRequestHandler):
                     task.get('group', ''),
                     task.get('dataset', 'work'),
                 ]
-                ws.append_row(row)
+                with _sheet_lock:
+                    task_ws = get_tasks_ws()
+                    task_ws.append_row(row)
                 self._json(200, {'ok': True, 'id': task['id']})
             except Exception as e:
+                print(f'[API /api/create] ERROR: {e}')
                 self._json(500, {'error': str(e)})
         elif self.path == '/api/delete':
             length = int(self.headers.get('Content-Length', 0))
@@ -858,13 +906,21 @@ class HealthHandler(BaseHTTPRequestHandler):
                 self._json(400, {'error': 'id required'})
                 return
             try:
-                row_num = find_row_by_id(task_id)
-                if not row_num:
-                    self._json(404, {'error': f'task {task_id} not found'})
-                    return
-                ws.delete_rows(row_num)
+                with _sheet_lock:
+                    task_ws = get_tasks_ws()
+                    rows = task_ws.get_all_values()
+                    row_num = None
+                    for i, r in enumerate(rows):
+                        if r and r[0] == task_id:
+                            row_num = i + 1
+                            break
+                    if not row_num:
+                        self._json(404, {'error': f'task {task_id} not found'})
+                        return
+                    task_ws.delete_rows(row_num)
                 self._json(200, {'ok': True, 'deleted': task_id})
             except Exception as e:
+                print(f'[API /api/delete] ERROR: {e}')
                 self._json(500, {'error': str(e)})
         else:
             self._json(404, {'error': 'not found'})
