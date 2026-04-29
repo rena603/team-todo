@@ -291,7 +291,7 @@
   .sb.done{background:var(--green-bg);color:var(--green-t);}
 
   /* ===== TIMELINE (Notion-style) ===== */
-  .tl-w{padding:0;overflow-x:auto;position:relative;background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);}
+  .tl-w{padding:0;overflow:auto;position:relative;background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);max-height:calc(100vh - 160px);}
   .tl-inner{position:relative;}
   .tl-toolbar{display:flex;align-items:center;gap:4px;padding:8px 12px;border-bottom:1px solid var(--border-light);background:var(--surface);position:sticky;left:0;z-index:12;}
   .tl-zoom-btn{padding:3px 10px;font-size:12px;font-weight:500;border:none;border-radius:4px;background:transparent;color:var(--text-3);cursor:pointer;transition:all var(--tr);}
@@ -331,11 +331,11 @@
   .tl-bo{font-size:10px;color:var(--text-3);flex-shrink:0;white-space:nowrap;}
   /* Bar area */
   .tl-bw{position:relative;height:36px;flex:1;min-width:0;}
-  .tl-b{position:absolute;top:7px;height:22px;border-radius:6px;display:flex;align-items:center;padding:0 0;font-size:11px;font-weight:500;white-space:nowrap;min-width:8px;cursor:grab;user-select:none;transition:opacity 80ms,box-shadow 150ms,transform 100ms;box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .tl-b{position:absolute;top:7px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:space-between;padding:0 0;font-size:11px;font-weight:500;white-space:nowrap;min-width:8px;cursor:grab;user-select:none;transition:opacity 80ms,box-shadow 150ms,transform 100ms;box-shadow:0 1px 2px rgba(0,0,0,.06);}
   .tl-b:hover{opacity:0.9;box-shadow:0 2px 8px rgba(0,0,0,0.12);transform:translateY(-1px);}
   .tl-b:active{cursor:grabbing;}
   .tl-b.dragging{z-index:20;box-shadow:0 6px 20px rgba(0,0,0,0.2);transform:translateY(-2px);opacity:0.92;}
-  .tl-label{flex:1;text-align:center;pointer-events:none;overflow:hidden;text-overflow:ellipsis;font-size:11px;padding:0 4px;}
+  .tl-label{position:absolute;left:8px;top:0;height:100%;display:flex;align-items:center;pointer-events:none;overflow:visible;white-space:nowrap;font-size:11px;padding:0 6px;color:inherit;z-index:1;}
   .tl-handle{width:8px;min-width:8px;height:100%;cursor:col-resize;flex-shrink:0;opacity:0;transition:opacity .15s;position:relative;z-index:2;}
   .tl-b:hover .tl-handle{opacity:1;}
   .tl-handle::after{content:'';display:block;width:3px;height:12px;border-radius:2px;background:rgba(0,0,0,0.3);margin:auto;}
@@ -1357,14 +1357,17 @@ function renderTimeline(){
     return pa!==0?-pa:new Date(a.dateStart||a.date||'2099')-new Date(b.dateStart||b.date||'2099');
   });
 
-  // Calculate date range
+  // Calculate date range — always allow wide scroll regardless of task dates
   const allDates=t.flatMap(x=>[x.dateStart,x.dateEnd,x.date].filter(Boolean)).map(d=>new Date(d));
   allDates.push(TODAY);
   const minD=new Date(Math.min(...allDates)),maxD=new Date(Math.max(...allDates));
-  const padB=tlZoom==='week'?0:tlZoom==='quarter'?2:1;
-  const padA=tlZoom==='week'?1:tlZoom==='quarter'?4:3;
-  const rangeStart=new Date(minD.getFullYear(),minD.getMonth()-padB,1);
-  const rangeEnd=new Date(maxD.getFullYear(),maxD.getMonth()+padA,0);
+  // Ensure today ±24 months is always scrollable; extend further if tasks fall outside
+  const baseBefore=new Date(TODAY.getFullYear(),TODAY.getMonth()-24,1);
+  const baseAfter=new Date(TODAY.getFullYear(),TODAY.getMonth()+25,0);
+  const effMinD=minD<baseBefore?minD:baseBefore;
+  const effMaxD=maxD>baseAfter?maxD:baseAfter;
+  const rangeStart=new Date(effMinD.getFullYear(),effMinD.getMonth(),1);
+  const rangeEnd=new Date(effMaxD.getFullYear(),effMaxD.getMonth()+1,0);
 
   // Build day array
   const days=[];
@@ -1487,7 +1490,7 @@ function renderTimeline(){
       h+=`<div class="tl-bw" style="width:${gridW}px">`;
       h+=`<div class="tl-b s${status[0]}${isOverdue?' overdue':''}" data-tid="${x.id}" style="left:${barL}px;width:${barW}px">`;
       h+=`<div class="tl-handle tl-handle-l"></div>`;
-      h+=`<span class="tl-label">${barW>60?x.name:''}</span>`;
+      h+=`<span class="tl-label">${x.name}</span>`;
       h+=`<div class="tl-handle tl-handle-r"></div>`;
       h+=`</div>`;
       // Deadline diamond
@@ -1515,26 +1518,32 @@ function renderTimeline(){
 
   document.querySelectorAll('.tl-b[data-tid]').forEach(bar=>{
     const tid=bar.dataset.tid;
-    let mode=null,startX,origL,origW,origScrollL,scrollAnimId=null;
+    let mode=null,startX,startY,origL,origW,origScrollL,scrollAnimId=null,hasMoved=false,suppressClick=false;
+    const DRAG_THRESHOLD=10;
+
+    // Native click → always open modal (browser-managed click vs drag detection)
+    bar.addEventListener('click',e=>{
+      if(suppressClick){suppressClick=false;return;}
+      e.stopPropagation();
+      openModal(tid);
+    });
 
     function onDown(e,m){
-      e.preventDefault();e.stopPropagation();
       mode=m;
       startX=(e.clientX!=null?e.clientX:e.touches[0].clientX);
+      startY=(e.clientY!=null?e.clientY:e.touches[0].clientY);
       origL=parseFloat(bar.style.left);
       origW=parseFloat(bar.style.width);
       origScrollL=container.scrollLeft;
-      bar.classList.add('dragging');
-      tooltip.classList.add('show');
-      updateTooltip(e);
+      hasMoved=false;
       document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
       document.addEventListener('touchmove',onMove,{passive:false});document.addEventListener('touchend',onUp);
     }
 
-    bar.querySelector('.tl-handle-l').addEventListener('mousedown',e=>onDown(e,'resizeL'));
-    bar.querySelector('.tl-handle-l').addEventListener('touchstart',e=>onDown(e,'resizeL'),{passive:false});
-    bar.querySelector('.tl-handle-r').addEventListener('mousedown',e=>onDown(e,'resizeR'));
-    bar.querySelector('.tl-handle-r').addEventListener('touchstart',e=>onDown(e,'resizeR'),{passive:false});
+    bar.querySelector('.tl-handle-l').addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();onDown(e,'resizeL');});
+    bar.querySelector('.tl-handle-l').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();onDown(e,'resizeL');},{passive:false});
+    bar.querySelector('.tl-handle-r').addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();onDown(e,'resizeR');});
+    bar.querySelector('.tl-handle-r').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();onDown(e,'resizeR');},{passive:false});
     bar.addEventListener('mousedown',e=>{
       if(e.target.closest('.tl-handle'))return;
       onDown(e,'move');
@@ -1574,8 +1583,17 @@ function renderTimeline(){
     }
 
     function onMove(e){
-      if(!mode)return;e.preventDefault();
+      if(!mode)return;
       const cx=(e.clientX!=null?e.clientX:e.touches[0].clientX);
+      const cy=(e.clientY!=null?e.clientY:e.touches[0].clientY);
+      if(!hasMoved){
+        if(Math.abs(cx-startX)<DRAG_THRESHOLD&&Math.abs(cy-startY)<DRAG_THRESHOLD)return;
+        hasMoved=true;
+        bar.classList.add('dragging');
+        tooltip.classList.add('show');
+        updateTooltip(e);
+      }
+      e.preventDefault();
       const scrollDelta=container.scrollLeft-origScrollL;
       const dx=cx-startX+scrollDelta;
 
@@ -1598,10 +1616,18 @@ function renderTimeline(){
     function onUp(){
       if(!mode)return;
       if(scrollAnimId){cancelAnimationFrame(scrollAnimId);scrollAnimId=null;}
-      bar.classList.remove('dragging');
-      tooltip.classList.remove('show');
       document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);
       document.removeEventListener('touchmove',onMove);document.removeEventListener('touchend',onUp);
+      // No drag past threshold → open modal directly (don't rely on native click)
+      if(!hasMoved){
+        mode=null;
+        suppressClick=true;
+        setTimeout(()=>{suppressClick=false;},100);
+        openModal(tid);
+        return;
+      }
+      bar.classList.remove('dragging');
+      tooltip.classList.remove('show');
       // Snap to day grid
       const fl=parseFloat(bar.style.left),fw=parseFloat(bar.style.width);
       const ds=fromPx(fl),de=fromPx(fl+fw-dayCellW/2);
@@ -1609,16 +1635,19 @@ function renderTimeline(){
       const snappedL=dayIdx(newStart)*dayCellW;
       const snappedW=Math.max((dayIdx(newEnd)-dayIdx(newStart)+1)*dayCellW,dayCellW);
       bar.style.left=snappedL+'px';bar.style.width=snappedW+'px';
-      bar.querySelector('.tl-label').textContent=snappedW>60?ft(tid)?.name||'':'';
+      bar.querySelector('.tl-label').textContent=ft(tid)?.name||'';
       // Save locally + API
       const task=ft(tid);
+      const changed=task&&(task.dateStart!==newStart||task.dateEnd!==newEnd);
       if(task){
-        const changed=task.dateStart!==newStart||task.dateEnd!==newEnd;
         task.dateStart=newStart;task.dateEnd=newEnd;
         sv();
         if(changed)apiUpdate(tid,{dateStart:newStart,dateEnd:newEnd});
       }
       mode=null;
+      // Suppress the native click event that would otherwise fire after mouseup
+      suppressClick=true;
+      setTimeout(()=>{suppressClick=false;},100);
     }
   });
 }
