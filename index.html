@@ -1340,8 +1340,8 @@ function renderList(){
         <th>${colHeader('status','ステータス',uStatuses,k=>SL[k])}</th>
         <th>${colHeader('project','クライアント',uProjects)}</th>
         <th>${colHeader('name','タスク',uNames)}</th>
-        <th>${colHeader('stars','★',uStars,v=>v==='0'?'-':'★'.repeat(Number(v)))}</th>
-        <th>${colHeader('hearts','♡',uHearts,v=>v==='0'?'-':'♡'.repeat(Number(v)))}</th>
+        <th>${colHeader('stars','緊急度',uStars,v=>v==='0'?'-':'★'.repeat(Number(v)))}</th>
+        <th>${colHeader('hearts','重要度',uHearts,v=>v==='0'?'-':'♡'.repeat(Number(v)))}</th>
         <th>${colHeader('date','期日',uDates)}</th>
         <th>${colHeader('ballOwner','ボール',uBall,v=>v==='(未設定)'?v:fname(v))}</th>
         <th>${colHeader('assignee','担当',uAssignees,fname)}</th>
