@@ -571,6 +571,16 @@
   .billable-toggle-track .billable-toggle-knob{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left var(--tr);box-shadow:var(--sh-xs);}
   .billable-toggle-track.on .billable-toggle-knob{left:20px;}
   .billable-toggle-label{font-size:12px;font-weight:600;color:var(--text-2);}
+
+  /* ===== MODAL PRIORITY/URGENCY PICKER ===== */
+  .prio-picker{display:flex;align-items:center;gap:14px;margin-left:auto;}
+  .prio-set{display:flex;gap:1px;cursor:pointer;user-select:none;}
+  .prio-ic{font-size:18px;line-height:1;transition:transform var(--tr),color var(--tr);padding:0 1px;}
+  .prio-ic:hover{transform:scale(1.18);}
+  .prio-set[data-type="heart"] .prio-ic{color:var(--pink);}
+  .prio-set[data-type="heart"] .prio-ic:not(.on){color:var(--text-3);opacity:.55;}
+  .prio-set[data-type="star"] .prio-ic{color:var(--yellow);}
+  .prio-set[data-type="star"] .prio-ic:not(.on){color:var(--text-3);opacity:.55;}
 </style>
 </head>
 <body>
@@ -637,7 +647,6 @@
 
 <div class="mo" id="modal">
   <div class="md">
-    <h3 id="modalTitle">新規タスク</h3>
     <label>タスク名</label><input type="text" id="mName">
     <label>クライアント</label>
     <div class="proj-wrap">
@@ -647,10 +656,22 @@
       <div><label>ステータス</label><select id="mStatus"><option value="todo">未着手</option><option value="progress">進行中</option><option value="waiting">先方確認中</option><option value="done">完了</option></select></div>
       <div><label>期日(Fix Day)</label><input type="date" id="mDate"></div>
     </div>
-    <label>稼働区分</label>
+    <label>稼働区分 / 重要度 / 緊急度</label>
     <div class="billable-toggle">
       <div class="billable-toggle-track on" id="mBillableToggle" onclick="toggleModalBillable()"><div class="billable-toggle-knob"></div></div>
       <span class="billable-toggle-label" id="mBillableLabel">稼働（Billable）</span>
+      <div class="prio-picker">
+        <div class="prio-set" data-type="heart" title="重要度">
+          <span class="prio-ic" onclick="setModalPrio('heart',1)">♡</span>
+          <span class="prio-ic" onclick="setModalPrio('heart',2)">♡</span>
+          <span class="prio-ic" onclick="setModalPrio('heart',3)">♡</span>
+        </div>
+        <div class="prio-set" data-type="star" title="緊急度">
+          <span class="prio-ic" onclick="setModalPrio('star',1)">☆</span>
+          <span class="prio-ic" onclick="setModalPrio('star',2)">☆</span>
+          <span class="prio-ic" onclick="setModalPrio('star',3)">☆</span>
+        </div>
+      </div>
     </div>
     <label>担当者</label>
     <div class="assignee-drop" id="mAssigneeDrop">
@@ -1756,6 +1777,19 @@ function setModalBillable(val){
   if(track)track.classList.toggle('on',mBillable);
   if(label)label.textContent=mBillable?'稼働（Billable）':'非稼働（Non-billable）';
 }
+function setModalPrio(type,v){
+  if(type==='heart'){S.mH=(S.mH===v)?0:v;}
+  else{S.mS=(S.mS===v)?0:v;}
+  renderModalPrio();
+}
+function renderModalPrio(){
+  document.querySelectorAll('#modal .prio-set[data-type="heart"] .prio-ic').forEach((el,i)=>{
+    const on=i<(S.mH||0);el.classList.toggle('on',on);el.textContent=on?'♥':'♡';
+  });
+  document.querySelectorAll('#modal .prio-set[data-type="star"] .prio-ic').forEach((el,i)=>{
+    const on=i<(S.mS||0);el.classList.toggle('on',on);el.textContent=on?'★':'☆';
+  });
+}
 
 let matrixDragMoved=false;
 let savedScrollY=0;
@@ -1766,7 +1800,6 @@ function openModal(id,ds){
   if(id){
     const t=ft(id);if(!t)return;S.ds=fds(id);
     document.getElementById('datasetTabs').querySelectorAll('.ds-b').forEach(b=>b.classList.toggle('on',b.dataset.dataset===S.ds));
-    document.getElementById('modalTitle').textContent='タスク編集';
     document.getElementById('mName').value=t.name;
     populateProjectSelect(t.project);
     document.getElementById('mStatus').value=sk(t.status);document.getElementById('mDate').value=t.date||'';
@@ -1775,7 +1808,6 @@ function openModal(id,ds){
     setModalBillable(t.billable!==false);
     document.getElementById('mDelete').style.display='block';
   } else {
-    document.getElementById('modalTitle').textContent='新規タスク';
     document.getElementById('mName').value='';
     populateProjectSelect('');
     document.getElementById('mNotes').value='';
@@ -1784,6 +1816,7 @@ function openModal(id,ds){
     setModalBillable(true);
     document.getElementById('mDelete').style.display='none';
   }
+  renderModalPrio();
   document.getElementById('modal').classList.add('open');
 }
 
