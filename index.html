@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Team TODO</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Team TODO">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%236366f1'/%3E%3Crect x='14' y='16' width='14' height='14' rx='3' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='M17 22 L21 26 L27 18' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cline x1='34' y1='23' x2='52' y2='23' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3Crect x='14' y='36' width='14' height='14' rx='3' fill='none' stroke='white' stroke-width='3'/%3E%3Cline x1='34' y1='43' x2='52' y2='43' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1849,7 +1855,16 @@ document.getElementById('mDelete').onclick=function(){
   fetch(API_BASE+'/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).catch(e=>console.warn('API delete failed',e));
 };
 document.getElementById('modal').onclick=function(e){if(e.target===this)closeModal();};
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeModal();return;}
+  if(e.key==='Enter'&&document.getElementById('modal').classList.contains('open')){
+    // select/button要素でのEnterはデフォルト動作に任せる
+    const tag=(e.target.tagName||'').toLowerCase();
+    if(tag==='select'||tag==='button')return;
+    e.preventDefault();
+    document.getElementById('mSave').click();
+  }
+});
 
 // Routine view
 function renderRoutine(){
@@ -2893,6 +2908,11 @@ ldTT();fetchTimeEntries();
 ld();ldRoutines();ttSyncClientsFromTasks();loadHash();render();updateHash();fetchSheet();fetchProjColors();
 // Ensure timeline scrolls to today after initial paint
 if(S.view==='timeline')setTimeout(()=>tlScrollToToday(),100);
+</script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
 </script>
 </body>
 </html>
