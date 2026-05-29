@@ -798,11 +798,21 @@ async function apiCreate(task){
     await fetch(API_BASE+'/api/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:t})});
   }catch(e){console.warn('API create failed',e);}
 }
-async function fetchSheet(){
+async function fetchSheet(retryCount=0){
   try{
     const r=await fetch(API_BASE+'/api/tasks');
     if(!r.ok)throw new Error('API returned '+r.status);
-    const tasks=await r.json();
+    const body=await r.text();
+    // "OK"が返ってきた場合（Renderのgspreadセッション劣化）は最大3回リトライ
+    if(body.trim()==='OK'){
+      if(retryCount<3){
+        document.getElementById('syncStatus').textContent='再試行中…';
+        await new Promise(res=>setTimeout(res,3000));
+        return fetchSheet(retryCount+1);
+      }
+      throw new Error('API returned OK (server session degraded)');
+    }
+    const tasks=JSON.parse(body);
     if(!Array.isArray(tasks))throw new Error('unexpected response');
     const rows=tasks.map(t=>({
       id:t.id||'',name:t.name||'',project:t.project||'',status:t.status||'',
@@ -816,7 +826,7 @@ async function fetchSheet(){
     sv();if(typeof TT!=='undefined')ttSyncClientsFromTasks();render();
     document.getElementById('syncStatus').textContent='synced';
     setTimeout(()=>{document.getElementById('syncStatus').textContent='';},2000);
-  }catch(e){console.warn('API fetch failed, using cache',e);}
+  }catch(e){console.warn('API fetch failed, using cache',e);document.getElementById('syncStatus').textContent='';}
 }
 
 function ld(){const s=localStorage.getItem(KEY);if(s){const p=JSON.parse(s);S.work=p.work||[];S.app=p.app||[];}}
