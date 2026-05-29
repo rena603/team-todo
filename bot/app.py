@@ -614,9 +614,16 @@ class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/api/tasks':
             try:
-                with _sheet_lock:
+                acquired = _sheet_lock.acquire(timeout=15)
+                if not acquired:
+                    print('[API /api/tasks] lock timeout')
+                    self._json(503, {'error': 'lock timeout'})
+                    return
+                try:
                     task_ws = get_tasks_ws()
                     rows = task_ws.get_all_values()
+                finally:
+                    _sheet_lock.release()
                 if len(rows) <= 1:
                     self._json(200, [])
                     return
@@ -635,9 +642,15 @@ class HealthHandler(BaseHTTPRequestHandler):
             return
         if self.path == '/api/clients':
             try:
-                with _sheet_lock:
+                acquired = _sheet_lock.acquire(timeout=15)
+                if not acquired:
+                    self._json(503, {'error': 'lock timeout'})
+                    return
+                try:
                     cws = get_clients_ws()
                     rows = cws.get_all_values()
+                finally:
+                    _sheet_lock.release()
                 if len(rows) <= 1:
                     self._json(200, [])
                     return
@@ -653,9 +666,15 @@ class HealthHandler(BaseHTTPRequestHandler):
             return
         if self.path == '/api/projects':
             try:
-                with _sheet_lock:
+                acquired = _sheet_lock.acquire(timeout=15)
+                if not acquired:
+                    self._json(503, {'error': 'lock timeout'})
+                    return
+                try:
                     pws = get_projects_ws()
                     rows = pws.get_all_values()
+                finally:
+                    _sheet_lock.release()
                 if len(rows) <= 1:
                     self._json(200, [])
                     return
