@@ -713,13 +713,23 @@ class HealthHandler(BaseHTTPRequestHandler):
                 }
             except Exception as e:
                 slack_test = {'error': str(e)}
+            # gspreadの疎通テスト
+            gspread_test = None
+            try:
+                ws_test = get_tasks_ws()
+                row_count = len(ws_test.get_all_values())
+                gspread_test = {'ok': True, 'rows': row_count}
+            except Exception as e:
+                gspread_test = {'ok': False, 'error': str(e)}
             self._json(200, {
+                'version': '2026-05-29-b',
                 'bunpo_channel_map': BUNPO_CHANNEL,
                 'channel_cache_size': len(_channel_id_cache),
                 'bunpo_in_cache': {ch: _channel_id_cache[ch] for ch in bunpo_channels},
                 'all_channels_sample': list(_channel_id_cache.keys())[:50],
                 'cache_rebuild_error': cache_error,
                 'slack_api_test': slack_test,
+                'gspread_test': gspread_test,
             })
             return
         if self.path == '/api/routines':
