@@ -1,4 +1,4 @@
-const CACHE = 'team-todo-v1';
+const CACHE = 'team-todo-v2';
 const STATIC = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
