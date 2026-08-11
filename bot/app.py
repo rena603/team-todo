@@ -317,7 +317,8 @@ def handle_mention(event, say):
            task['assignees'], task['stars'], task['hearts'],
            task['ballOwner'], task['notes'], group, task['dataset']]
 
-    ws.append_row(row)
+    with _sheet_lock:
+        get_tasks_ws().append_row(row)
 
     normalized_note = ''
     if original_project and original_project != task['project']:
